@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Think Track</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+
+        .mode-btn.active {
+            background: #4CAF50;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .options-container {
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .option-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .option-item input {
+            flex: 1;
+        }
+
+        .remove-option {
+            background: #ff4757;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .remove-option:hover {
+            background: #ff3742;
+            transform: scale(1.1);
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-large {
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            font-size: 1.2rem;
+            min-height: 60px;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .navigation-buttons .btn {
+            flex: 1;
+        }
+
+        .current-node {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .node-id {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .node-instruction {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: #3498db;
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .nodes-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .node-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .node-item:last-child {
+            border-bottom: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .image-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .node-image {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .node-image img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .panel {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Think Track</h1>
+            <p>Create and navigate interactive flowcharts</p>
+        </div>
+
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('create')">✏️ Create</button>
+            <button class="mode-btn" onclick="switchMode('navigate')">🔁 Navigate</button>
+        </div>
+
+        <!-- Create Mode -->
+        <div id="create-mode">
+            <div class="panel">
+                <h2>📝 Add New Node</h2>
+                <form id="node-form">
+                    <div class="form-group">
+                        <label for="node-id">Node ID:</label>
+                        <input type="text" id="node-id" placeholder="e.g., start, check-id, end" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="node-instruction">Instruction Text:</label>
+                        <textarea id="node-instruction" placeholder="e.g., Ask the customer for their ID" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="node-image">Optional Image:</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="node-image" accept="image/*" onchange="previewImage(event)">
+                            <label for="node-image" class="file-input-label">📷 Add Image</label>
+                        </div>
+                        <div id="image-preview" class="image-preview hidden">
+                            <img id="preview-img" alt="Preview">
+                            <button type="button" class="btn btn-danger" onclick="removeImage()" style="margin-top: 10px;">Remove Image</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Options:</label>
+                        <div class="options-container" id="options-container">
+                            <div class="option-item">
+                                <input type="text" placeholder="Option label (e.g., Yes)" required>
+                                <input type="text" placeholder="Next node ID (e.g., verify-id)" required>
+                                <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="addOption()">+ Add Option</button>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-large" id="submit-btn">Add Node</button>
+                    <button type="button" class="btn btn-secondary btn-large hidden" id="cancel-edit-btn" onclick="cancelEdit()">Cancel Edit</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h2>📊 Current Flowchart</h2>
+                <div id="nodes-list" class="nodes-list">
+                    <p style="text-align: center; color: #666;">No nodes created yet</p>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" onclick="exportFlowchart()">💾 Export JSON</button>
+                    <div class="file-input-wrapper" style="margin-top: 10px;">
+                        <input type="file" id="import-file" accept=".json" onchange="importFlowchart(event)">
+                        <label for="import-file" class="file-input-label">📁 Import JSON</label>
+                    </div>
+                    <button class="btn btn-danger" onclick="clearFlowchart()" style="margin-top: 10px; width: 100%;">🗑️ Clear All</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigate Mode -->
+        <div id="navigate-mode" class="hidden">
+            <div class="panel">
+                <div id="navigation-content">
+                    <p style="text-align: center; color: #666;">No flowchart loaded. Please create nodes or import a flowchart.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let flowchart = {};
+        let currentNodeId = 'start';
+        let navigationHistory = [];
+        let editingNodeId = null;
+        let currentImageData = null;
+
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (mode === 'create') {
+                document.getElementById('create-mode').classList.remove('hidden');
+                document.getElementById('navigate-mode').classList.add('hidden');
+            } else {
+                document.getElementById('create-mode').classList.add('hidden');
+                document.getElementById('navigate-mode').classList.remove('hidden');
+                
+                // Reset to proper starting node when switching to navigate mode
+                if (Object.keys(flowchart).length > 0) {
+                    if (flowchart['start']) {
+                        currentNodeId = 'start';
+                    } else {
+                        currentNodeId = Object.keys(flowchart)[0];
+                    }
+                    navigationHistory = [];
+                }
+                
+                loadNavigationView();
+            }
+        }
+
+        function addOption() {
+            const container = document.getElementById('options-container');
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-item';
+            optionDiv.innerHTML = `
+                <input type="text" placeholder="Option label (e.g., No)" required>
+                <input type="text" placeholder="Next node ID (e.g., end)" required>
+                <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+            `;
+            container.appendChild(optionDiv);
+        }
+
+        function removeOption(button) {
+            const container = document.getElementById('options-container');
+            if (container.children.length > 1) {
+                button.parentElement.remove();
+            }
+        }
+
+        document.getElementById('node-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nodeId = document.getElementById('node-id').value.trim();
+            const instruction = document.getElementById('node-instruction').value.trim();
+            const optionItems = document.querySelectorAll('.option-item');
+            
+            const options = [];
+            optionItems.forEach(item => {
+                const inputs = item.querySelectorAll('input');
+                const label = inputs[0].value.trim();
+                const nextNodeId = inputs[1].value.trim();
+                
+                if (label && nextNodeId) {
+                    options.push({ label, nextNodeId });
+                }
+            });
+            
+            if (options.length === 0) {
+                alert('Please add at least one option.');
+                return;
+            }
+            
+            // Check if we're editing and the ID changed, make sure new ID doesn't exist
+            if (editingNodeId && editingNodeId !== nodeId && flowchart[nodeId]) {
+                alert('A node with this ID already exists. Please choose a different ID.');
+                return;
+            }
+            
+            // If editing and ID changed, remove the old node
+            if (editingNodeId && editingNodeId !== nodeId) {
+                delete flowchart[editingNodeId];
+            }
+            
+            flowchart[nodeId] = {
+                id: nodeId,
+                instruction: instruction,
+                options: options,
+                image: currentImageData
+            };
+            
+            updateNodesDisplay();
+            resetForm();
+            
+            // Show success message
+            const action = editingNodeId ? 'updated' : 'added';
+            alert(`Node "${nodeId}" ${action} successfully!`);
+        });
+
+        function updateNodesDisplay() {
+            const nodesList = document.getElementById('nodes-list');
+            
+            if (Object.keys(flowchart).length === 0) {
+                nodesList.innerHTML = '<p style="text-align: center; color: #666;">No nodes created yet</p>';
+                return;
+            }
+            
+            let html = '';
+            Object.values(flowchart).forEach(node => {
+                const optionsText = node.options.map(opt => `${opt.label} → ${opt.nextNodeId}`).join(', ');
+                const hasImage = node.image ? ' 📷' : '';
+                html += `
+                    <div class="node-item">
+                        <div>
+                            <strong>${node.id}${hasImage}</strong><br>
+                            <small>${node.instruction}</small><br>
+                            <small style="color: #666;">Options: ${optionsText}</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem; margin-right: 5px;" onclick="editNode('${node.id}')">Edit</button>
+                            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteNode('${node.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            nodesList.innerHTML = html;
+        }
+
+        function resetForm() {
+            document.getElementById('node-form').reset();
+            editingNodeId = null;
+            currentImageData = null;
+            
+            // Hide image preview
+            document.getElementById('image-preview').classList.add('hidden');
+            
+            // Update UI to show "Add" mode
+            document.getElementById('submit-btn').textContent = 'Add Node';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            document.getElementById('node-id').disabled = false;
+            
+            // Reset to one option
+            const container = document.getElementById('options-container');
+            container.innerHTML = `
+                <div class="option-item">
+                    <input type="text" placeholder="Option label (e.g., Yes)" required>
+                    <input type="text" placeholder="Next node ID (e.g., verify-id)" required>
+                    <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+                </div>
+            `;
+        }
+
+        function editNode(nodeId) {
+            const node = flowchart[nodeId];
+            if (!node) return;
+            
+            editingNodeId = nodeId;
+            
+            // Populate form with node data
+            document.getElementById('node-id').value = node.id;
+            document.getElementById('node-instruction').value = node.instruction;
+            
+            // Handle image data
+            currentImageData = node.image || null;
+            if (currentImageData) {
+                document.getElementById('preview-img').src = currentImageData;
+                document.getElementById('image-preview').classList.remove('hidden');
+            } else {
+                document.getElementById('image-preview').classList.add('hidden');
+            }
+            
+            // Clear and populate options
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            node.options.forEach(option => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option-item';
+                optionDiv.innerHTML = `
+                    <input type="text" value="${option.label}" required>
+                    <input type="text" value="${option.nextNodeId}" required>
+                    <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+                `;
+                container.appendChild(optionDiv);
+            });
+            
+            // Update UI to show "Edit" mode
+            document.getElementById('submit-btn').textContent = 'Update Node';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            document.getElementById('node-id').disabled = true; // Prevent ID changes to avoid confusion
+            
+            // Scroll to form
+            document.getElementById('node-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            resetForm();
+        }
+
+        function deleteNode(nodeId) {
+            if (confirm(`Are you sure you want to delete node "${nodeId}"?`)) {
+                delete flowchart[nodeId];
+                updateNodesDisplay();
+            }
+        }
+
+        function exportFlowchart() {
+            if (Object.keys(flowchart).length === 0) {
+                alert('No flowchart to export. Please create some nodes first.');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(flowchart, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'flowchart.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function importFlowchart(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedFlowchart = JSON.parse(e.target.result);
+                    
+                    // Validate the imported data
+                    if (typeof importedFlowchart !== 'object' || importedFlowchart === null) {
+                        throw new Error('Invalid flowchart format - must be a valid JSON object');
+                    }
+                    
+                    // Additional validation to ensure it has the right structure
+                    for (let nodeId in importedFlowchart) {
+                        const node = importedFlowchart[nodeId];
+                        if (!node.id || !node.instruction || !Array.isArray(node.options)) {
+                            throw new Error(`Invalid node structure for "${nodeId}"`);
+                        }
+                    }
+                    
+                    flowchart = importedFlowchart;
+                    updateNodesDisplay();
+                    alert('Flowchart imported successfully!');
+                } catch (error) {
+                    alert('Error importing flowchart: ' + error.message);
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Clear the file input so the same file can be imported again if needed
+            event.target.value = '';
+        }
+
+        function clearFlowchart() {
+            if (confirm('Are you sure you want to clear all nodes? This cannot be undone.')) {
+                flowchart = {};
+                updateNodesDisplay();
+                resetForm();
+            }
+        }
+
+        function loadNavigationView() {
+            const content = document.getElementById('navigation-content');
+            
+            if (Object.keys(flowchart).length === 0) {
+                content.innerHTML = '<p style="text-align: center; color: #666;">No flowchart loaded. Please create nodes or import a flowchart.</p>';
+                return;
+            }
+            
+            // If current node doesn't exist, try to find 'start' node or use the first available node
+            if (!flowchart[currentNodeId]) {
+                if (flowchart['start']) {
+                    currentNodeId = 'start';
+                } else {
+                    // Use the first available node
+                    const firstNodeId = Object.keys(flowchart)[0];
+                    currentNodeId = firstNodeId;
+                }
+            }
+            
+            const currentNode = flowchart[currentNodeId];
+            
+            let html = `
+                <div class="current-node">
+                    <div class="node-id">Node: ${currentNode.id}</div>
+                    <div class="node-instruction">${currentNode.instruction}</div>
+                    ${currentNode.image ? `<div class="node-image"><img src="${currentNode.image}" alt="Node illustration"></div>` : ''}
+                </div>
+            `;
+            
+            // Add option buttons
+            currentNode.options.forEach(option => {
+                html += `
+                    <button class="btn btn-primary btn-large" onclick="navigateToNode('${option.nextNodeId}')">
+                        ${option.label}
+                    </button>
+                `;
+            });
+            
+            // Add navigation controls
+            html += `
+                <div class="navigation-buttons">
+                    <button class="btn btn-secondary" onclick="goBack()" ${navigationHistory.length === 0 ? 'disabled' : ''}>
+                        ← Back
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetNavigation()">
+                        🏠 Start
+                    </button>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        }
+
+        function navigateToNode(nodeId) {
+            if (!flowchart[nodeId]) {
+                alert(`Node "${nodeId}" not found!`);
+                return;
+            }
+            
+            navigationHistory.push(currentNodeId);
+            currentNodeId = nodeId;
+            loadNavigationView();
+        }
+
+        function goBack() {
+            if (navigationHistory.length > 0) {
+                currentNodeId = navigationHistory.pop();
+                loadNavigationView();
+            }
+        }
+
+        function resetNavigation() {
+            // Reset to 'start' node if it exists, otherwise use the first available node
+            if (flowchart['start']) {
+                currentNodeId = 'start';
+            } else if (Object.keys(flowchart).length > 0) {
+                currentNodeId = Object.keys(flowchart)[0];
+            } else {
+                currentNodeId = 'start';
+            }
+            navigationHistory = [];
+            loadNavigationView();
+        }
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check file size (limit to 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Image file is too large. Please choose a file smaller than 5MB.');
+                event.target.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImageData = e.target.result;
+                document.getElementById('preview-img').src = currentImageData;
+                document.getElementById('image-preview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            currentImageData = null;
+            document.getElementById('node-image').value = '';
+            document.getElementById('image-preview').classList.add('hidden');
+        }
+
+        // Initialize
+        updateNodesDisplay();
+    </script>
+</body>
+</html>
