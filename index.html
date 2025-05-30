@@ -581,7 +581,146 @@
             font-size: 0.9rem;
         }
 
-        /* Example dropdown styles */
+        /* Search functionality styles */
+        .search-container {
+            margin-bottom: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input-wrapper input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52,152,219,0.1);
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #95a5a6;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .search-clear-btn:hover {
+            background: #7f8c8d;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .search-clear-btn.show {
+            display: block;
+        }
+
+        .search-results {
+            display: none;
+        }
+
+        .search-results.show {
+            display: block;
+        }
+
+        .search-result-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .search-result-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border-color: #3498db;
+        }
+
+        .search-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .search-result-id {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #3498db;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+
+        .search-result-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .search-result-actions .btn {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        .search-result-instruction {
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .search-result-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .search-result-option {
+            background: #ecf0f1;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .search-highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
         .example-dropdown {
             position: relative;
             display: inline-block;
@@ -797,6 +936,15 @@
                         <div class="flowchart-header">
                             <div class="flowchart-title">📊 Current Flowchart</div>
                             <div class="flowchart-stats" id="flowchart-stats">0 nodes</div>
+                        </div>
+                        
+                        <!-- Search Bar -->
+                        <div class="search-container" id="search-container">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="search-input" placeholder="🔍 Search nodes by ID or instruction text..." />
+                                <button class="search-clear-btn" onclick="clearSearch()" title="Clear search">×</button>
+                            </div>
+                            <div class="search-results" id="search-results"></div>
                         </div>
                         
                         <div id="flowchart-content">
@@ -1039,11 +1187,14 @@
         function updateFlowchartDisplay() {
             const content = document.getElementById('flowchart-content');
             const stats = document.getElementById('flowchart-stats');
+            const searchContainer = document.getElementById('search-container');
             
             const nodeCount = Object.keys(flowchart).length;
             stats.textContent = `${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;
             
+            // Show/hide search container based on whether there are nodes
             if (nodeCount === 0) {
+                searchContainer.style.display = 'none';
                 content.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📋</div>
@@ -1052,6 +1203,8 @@
                     </div>
                 `;
                 return;
+            } else {
+                searchContainer.style.display = 'block';
             }
             
             // Categorize nodes
@@ -1453,8 +1606,180 @@
             document.getElementById('image-preview').classList.add('hidden');
         }
 
+        // Search functionality
+        function setupSearchEventListeners() {
+            const searchInput = document.getElementById('search-input');
+            const clearBtn = document.querySelector('.search-clear-btn');
+            
+            // Input event for real-time search
+            searchInput.addEventListener('input', function(e) {
+                const query = e.target.value.trim();
+                
+                // Show/hide clear button
+                if (query.length > 0) {
+                    clearBtn.classList.add('show');
+                } else {
+                    clearBtn.classList.remove('show');
+                }
+                
+                // Perform search if query has content, otherwise show all nodes
+                if (query.length > 0) {
+                    performSearch(query);
+                } else {
+                    showAllNodes();
+                }
+            });
+            
+            // Keydown event for special keys
+            searchInput.addEventListener('keydown', handleSearchKeydown);
+        }
+
+        function handleSearchKeydown(event) {
+            if (event.key === 'Escape') {
+                clearSearch();
+            }
+        }
+
+        function performSearch(query) {
+            const searchResults = document.getElementById('search-results');
+            const flowchartContent = document.getElementById('flowchart-content');
+            
+            if (!query.trim()) {
+                showAllNodes();
+                return;
+            }
+            
+            // Search through flowchart nodes
+            const results = [];
+            const queryLower = query.toLowerCase();
+            
+            Object.values(flowchart).forEach(node => {
+                let matches = [];
+                
+                // Check node ID
+                if (node.id.toLowerCase().includes(queryLower)) {
+                    matches.push({ type: 'id', text: node.id });
+                }
+                
+                // Check instruction text
+                if (node.instruction.toLowerCase().includes(queryLower)) {
+                    matches.push({ type: 'instruction', text: node.instruction });
+                }
+                
+                // Check options
+                node.options.forEach(option => {
+                    if (option.label.toLowerCase().includes(queryLower)) {
+                        matches.push({ type: 'option', text: option.label });
+                    }
+                    if (option.nextNodeId.toLowerCase().includes(queryLower)) {
+                        matches.push({ type: 'target', text: option.nextNodeId });
+                    }
+                });
+                
+                if (matches.length > 0) {
+                    results.push({ node, matches });
+                }
+            });
+            
+            // Display search results
+            if (results.length > 0) {
+                let html = '';
+                results.forEach(({ node, matches }) => {
+                    html += createSearchResultItem(node, matches, queryLower);
+                });
+                searchResults.innerHTML = html;
+                searchResults.classList.add('show');
+                flowchartContent.style.display = 'none';
+            } else {
+                searchResults.innerHTML = '<div class="no-results">No nodes found matching your search.</div>';
+                searchResults.classList.add('show');
+                flowchartContent.style.display = 'none';
+            }
+        }
+
+        function createSearchResultItem(node, matches, query) {
+            return `
+                <div class="search-result-item" onclick="selectSearchResult('${node.id}')">
+                    <div class="search-result-header">
+                        <div class="search-result-id">${highlightText(node.id, query)}</div>
+                        <div class="search-result-actions">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); editNode('${node.id}')">Edit</button>
+                        </div>
+                    </div>
+                    <div class="search-result-instruction">${highlightText(node.instruction, query)}</div>
+                    <div class="search-result-options">
+                        ${node.options.map(option => 
+                            `<span class="search-result-option">${highlightText(option.label, query)} → ${highlightText(option.nextNodeId, query)}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightText(text, query) {
+            if (!query.trim()) return text;
+            
+            const regex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\                        { "label": "I value my intestines", "nextNodeI');
+        }
+
+        function selectSearchResult(nodeId) {
+            clearSearch();
+            
+            // Scroll to the node in the main view
+            const nodeCards = document.querySelectorAll('.node-card');
+            nodeCards.forEach(card => {
+                const idBadge = card.querySelector('.node-id-badge');
+                if (idBadge && idBadge.textContent === nodeId) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Highlight the card temporarily
+                    card.style.borderColor = '#3498db';
+                    card.style.boxShadow = '0 4px 16px rgba(52,152,219,0.3)';
+                    
+                    setTimeout(() => {
+                        card.style.borderColor = '';
+                        card.style.boxShadow = '';
+                    }, 2000);
+                }
+            });
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('search-input');
+            const clearBtn = document.querySelector('.search-clear-btn');
+            
+            searchInput.value = '';
+            clearBtn.classList.remove('show');
+            showAllNodes();
+        }
+
+        function showAllNodes() {
+            const searchResults = document.getElementById('search-results');
+            const flowchartContent = document.getElementById('flowchart-content');
+            
+            searchResults.classList.remove('show');
+            flowchartContent.style.display = 'block';
+        }
+
         // Initialize
         updateFlowchartDisplay();
+        
+        // Setup search event listeners when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupSearchEventListeners();
+        });
+        
+        // Also setup listeners immediately in case DOM is already loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupSearchEventListeners);
+        } else {
+            setupSearchEventListeners();
+        }
     </script>
 </body>
 </html>
