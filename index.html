@@ -193,6 +193,11 @@
             color: white;
         }
 
+        .btn-example {
+            background: #f39c12;
+            color: white;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
@@ -572,6 +577,71 @@
             font-size: 0.9rem;
         }
 
+        /* Example dropdown styles */
+        .example-dropdown {
+            position: relative;
+            display: inline-block;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .example-dropdown-btn {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            background: #f39c12;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .example-dropdown-btn:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+
+        .example-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            z-index: 1000;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 5px;
+            overflow: hidden;
+        }
+
+        .example-dropdown-content.show {
+            display: block;
+        }
+
+        .example-option {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .example-option:last-child {
+            border-bottom: none;
+        }
+
+        .example-option:hover {
+            background-color: #f8f9fa;
+        }
+
         .hidden {
             display: none;
         }
@@ -651,7 +721,7 @@
                 flex-direction: column;
             }
 
-            .flowchart-actions .btn {
+            .flowchart-actions .btn, .example-dropdown {
                 flex: none;
             }
         }
@@ -739,6 +809,17 @@
                                 <input type="file" id="import-file" accept=".json" onchange="importFlowchart(event)">
                                 <label for="import-file" class="file-input-label">📁 Import JSON</label>
                             </div>
+                            <div class="example-dropdown">
+                                <button class="example-dropdown-btn" onclick="toggleExampleDropdown()">
+                                    🎮 Load Example
+                                    <span id="dropdown-arrow">▼</span>
+                                </button>
+                                <div class="example-dropdown-content" id="example-dropdown">
+                                    <div class="example-option" onclick="loadExample('should-i-eat-it')">
+                                        🍱 Should I Eat It?
+                                    </div>
+                                </div>
+                            </div>
                             <button class="btn btn-danger" onclick="clearFlowchart()">🗑️ Clear All</button>
                         </div>
                     </div>
@@ -763,6 +844,62 @@
         let editingNodeId = null;
         let currentImageData = null;
 
+        // Example flowcharts data
+        const exampleFlowcharts = {
+            'should-i-eat-it': {
+                "start": {
+                    "id": "start",
+                    "instruction": "You found a mysterious Tupperware in the fridge. Open it?",
+                    "options": [
+                        { "label": "Yes, I'm brave", "nextNodeId": "sniff-test" },
+                        { "label": "Nope", "nextNodeId": "chicken-out" }
+                    ]
+                },
+                "sniff-test": {
+                    "id": "sniff-test",
+                    "instruction": "It smells... like regret. Proceed?",
+                    "options": [
+                        { "label": "I've eaten worse", "nextNodeId": "taste-test" },
+                        { "label": "Abort mission", "nextNodeId": "bin-it" }
+                    ]
+                },
+                "taste-test": {
+                    "id": "taste-test",
+                    "instruction": "You took a bite. The flavor is... indescribable. Keep eating?",
+                    "options": [
+                        { "label": "Deliciously dangerous", "nextNodeId": "hospital-time" },
+                        { "label": "I value my intestines", "nextNodeId": "bin-it" }
+                    ]
+                },
+                "bin-it": {
+                    "id": "bin-it",
+                    "instruction": "You toss it. The mold colony thanks you for releasing it.",
+                    "options": [
+                        { "label": "Back to Uber Eats", "nextNodeId": "end" }
+                    ]
+                },
+                "chicken-out": {
+                    "id": "chicken-out",
+                    "instruction": "You pretend you never saw it. But it saw you.",
+                    "options": [
+                        { "label": "Run away", "nextNodeId": "end" }
+                    ]
+                },
+                "hospital-time": {
+                    "id": "hospital-time",
+                    "instruction": "Congrats. You now have a starring role in 'Mystery Meal: ER Edition.'",
+                    "options": [
+                        { "label": "Call mom", "nextNodeId": "end" }
+                    ]
+                },
+                "end": {
+                    "id": "end",
+                    "instruction": "End of the road. Hopefully not the digestive tract.",
+                    "options": []
+                }
+            }
+        };
+
         function switchMode(mode) {
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
@@ -785,6 +922,45 @@
                 }
                 
                 loadNavigationView();
+            }
+        }
+
+        function toggleExampleDropdown() {
+            const dropdown = document.getElementById('example-dropdown');
+            const arrow = document.getElementById('dropdown-arrow');
+            
+            dropdown.classList.toggle('show');
+            arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('example-dropdown');
+            const button = document.querySelector('.example-dropdown-btn');
+            
+            if (!button.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('show');
+                document.getElementById('dropdown-arrow').textContent = '▼';
+            }
+        });
+
+        function loadExample(exampleKey) {
+            if (exampleFlowcharts[exampleKey]) {
+                if (Object.keys(flowchart).length > 0) {
+                    if (!confirm('This will replace your current flowchart. Continue?')) {
+                        return;
+                    }
+                }
+                
+                flowchart = JSON.parse(JSON.stringify(exampleFlowcharts[exampleKey])); // Deep copy
+                updateFlowchartDisplay();
+                resetForm();
+                
+                // Close dropdown
+                document.getElementById('example-dropdown').classList.remove('show');
+                document.getElementById('dropdown-arrow').textContent = '▼';
+                
+                alert(`Example "${exampleKey}" loaded successfully!`);
             }
         }
 

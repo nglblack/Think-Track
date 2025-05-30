@@ -1,0 +1,52 @@
+{
+  "start": {
+    "id": "start",
+    "instruction": "You found a mysterious Tupperware in the fridge. Open it?",
+    "options": [
+      { "label": "Yes, I'm brave", "nextNodeId": "sniff-test" },
+      { "label": "Nope", "nextNodeId": "chicken-out" }
+    ]
+  },
+  "sniff-test": {
+    "id": "sniff-test",
+    "instruction": "It smells... like regret. Proceed?",
+    "options": [
+      { "label": "I’ve eaten worse", "nextNodeId": "taste-test" },
+      { "label": "Abort mission", "nextNodeId": "bin-it" }
+    ]
+  },
+  "taste-test": {
+    "id": "taste-test",
+    "instruction": "You took a bite. The flavor is... indescribable. Keep eating?",
+    "options": [
+      { "label": "Deliciously dangerous", "nextNodeId": "hospital-time" },
+      { "label": "I value my intestines", "nextNodeId": "bin-it" }
+    ]
+  },
+  "bin-it": {
+    "id": "bin-it",
+    "instruction": "You toss it. The mold colony thanks you for releasing it.",
+    "options": [
+      { "label": "Back to Uber Eats", "nextNodeId": "end" }
+    ]
+  },
+  "chicken-out": {
+    "id": "chicken-out",
+    "instruction": "You pretend you never saw it. But it saw you.",
+    "options": [
+      { "label": "Run away", "nextNodeId": "end" }
+    ]
+  },
+  "hospital-time": {
+    "id": "hospital-time",
+    "instruction": "Congrats. You now have a starring role in 'Mystery Meal: ER Edition.'",
+    "options": [
+      { "label": "Call mom", "nextNodeId": "end" }
+    ]
+  },
+  "end": {
+    "id": "end",
+    "instruction": "End of the road. Hopefully not the digestive tract.",
+    "options": []
+  }
+}
