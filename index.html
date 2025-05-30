@@ -231,6 +231,10 @@
             flex: 1;
         }
 
+        #navigation-content {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
         /* Navigate Mode Styles */
         #navigate-mode .panel {
             max-width: 800px;
@@ -1375,9 +1379,32 @@
                 return;
             }
             
-            navigationHistory.push(currentNodeId);
-            currentNodeId = nodeId;
-            loadNavigationView();
+            // Disable all buttons to prevent double-clicking
+            const buttons = document.querySelectorAll('.navigate-options .btn');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+            });
+            
+            // Add a brief delay with visual feedback
+            setTimeout(() => {
+                navigationHistory.push(currentNodeId);
+                currentNodeId = nodeId;
+                
+                // Fade out current content
+                const content = document.getElementById('navigation-content');
+                content.style.opacity = '0.3';
+                content.style.transform = 'translateY(-10px)';
+                
+                // Load new content after fade
+                setTimeout(() => {
+                    loadNavigationView();
+                    
+                    // Fade in new content
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                }, 150);
+            }, 200);
         }
 
         function goBack() {
