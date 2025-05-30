@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
             min-height: 100vh;
@@ -41,6 +41,9 @@
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .mode-btn {
@@ -68,6 +71,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
+        .create-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 30px;
+            align-items: start;
+        }
+
         .panel {
             background: rgba(255,255,255,0.95);
             border-radius: 20px;
@@ -75,6 +85,15 @@
             margin-bottom: 20px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             backdrop-filter: blur(10px);
+        }
+
+        .form-panel {
+            position: sticky;
+            top: 20px;
+        }
+
+        .flowchart-panel {
+            min-height: 600px;
         }
 
         .form-group {
@@ -207,22 +226,75 @@
             flex: 1;
         }
 
+        /* Navigate Mode Styles */
+        #navigate-mode .panel {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
         .current-node {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
         }
 
         .node-id {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #666;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
 
         .node-instruction {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: #333;
             line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .navigate-options {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .navigate-options .btn-large {
+            padding: 16px 20px;
+            font-size: 1rem;
+            min-height: auto;
+            border-radius: 10px;
+        }
+
+        .navigation-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .navigation-buttons .btn {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .node-image {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .node-image img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .file-input-wrapper {
@@ -253,25 +325,251 @@
             transform: translateY(-2px);
         }
 
-        .nodes-list {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .node-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+        /* Enhanced Flowchart Display */
+        .flowchart-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
         }
 
-        .node-item:last-child {
-            border-bottom: none;
+        .flowchart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .flowchart-stats {
+            font-size: 0.9rem;
+            color: #666;
+            background: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .flowchart-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .flowchart-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .flowchart-section.collapsed .nodes-grid {
+            max-height: 400px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .flowchart-section.collapsed .nodes-grid::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: linear-gradient(transparent, #f8f9fa);
+            pointer-events: none;
+        }
+
+        .show-more-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .show-more-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .show-more-btn.show-less {
+            background: #95a5a6;
+        }
+
+        .show-more-btn.show-less:hover {
+            background: #839496;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .nodes-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .node-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .node-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .node-card.start-node {
+            border-left: 4px solid #27ae60;
+        }
+
+        .node-card.end-node {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .node-id-badge {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            font-family: 'Monaco', 'Consolas', monospace;
+            text-decoration: underline;
+        }
+
+        .node-indicators {
+            display: flex;
+            gap: 5px;
+        }
+
+        .node-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .has-image {
+            background: #3498db;
+            color: white;
+        }
+
+        .node-instruction-text {
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .node-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option-flow {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            border-left: 3px solid #667eea;
+        }
+
+        .option-label {
+            font-weight: 600;
+            color: #333;
+            margin-right: 8px;
+        }
+
+        .option-arrow {
+            color: #666;
+            margin: 0 8px;
+        }
+
+        .option-target {
+            color: #667eea;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.8rem;
+        }
+
+        .node-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .node-actions .btn {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        .flowchart-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .flowchart-actions .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+        }
+
+        .flowchart-actions .file-input-wrapper {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .flowchart-actions .file-input-label {
+            padding: 12px 16px;
+            font-size: 0.9rem;
         }
 
         .hidden {
@@ -302,6 +600,40 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state-subtext {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 1024px) {
+            .create-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .form-panel {
+                position: static;
+            }
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 15px;
@@ -313,6 +645,14 @@
             
             .panel {
                 padding: 20px;
+            }
+
+            .flowchart-actions {
+                flex-direction: column;
+            }
+
+            .flowchart-actions .btn {
+                flex: none;
             }
         }
     </style>
@@ -331,61 +671,77 @@
 
         <!-- Create Mode -->
         <div id="create-mode">
-            <div class="panel">
-                <h2>📝 Add New Node</h2>
-                <form id="node-form">
-                    <div class="form-group">
-                        <label for="node-id">Node ID:</label>
-                        <input type="text" id="node-id" placeholder="e.g., start, check-id, end" required>
+            <div class="create-layout">
+                <!-- Left Column - Form -->
+                <div class="form-column">
+                    <div class="panel form-panel">
+                        <h2>📝 Add New Node</h2>
+                        <form id="node-form">
+                            <div class="form-group">
+                                <label for="node-id">Node ID:</label>
+                                <input type="text" id="node-id" placeholder="e.g., start, check-id, end" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="node-instruction">Instruction Text:</label>
+                                <textarea id="node-instruction" placeholder="e.g., Ask the customer for their ID" required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="node-image">Optional Image:</label>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="node-image" accept="image/*" onchange="previewImage(event)">
+                                    <label for="node-image" class="file-input-label">📷 Add Image</label>
+                                </div>
+                                <div id="image-preview" class="image-preview hidden">
+                                    <img id="preview-img" alt="Preview">
+                                    <button type="button" class="btn btn-danger" onclick="removeImage()" style="margin-top: 10px;">Remove Image</button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Options:</label>
+                                <div class="options-container" id="options-container">
+                                    <div class="option-item">
+                                        <input type="text" placeholder="Option label (e.g., Yes)" required>
+                                        <input type="text" placeholder="Next node ID (e.g., verify-id)" required>
+                                        <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-secondary" onclick="addOption()">+ Add Option</button>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-large" id="submit-btn">Add Node</button>
+                            <button type="button" class="btn btn-secondary btn-large hidden" id="cancel-edit-btn" onclick="cancelEdit()">Cancel Edit</button>
+                        </form>
                     </div>
-                    
-                    <div class="form-group">
-                        <label for="node-instruction">Instruction Text:</label>
-                        <textarea id="node-instruction" placeholder="e.g., Ask the customer for their ID" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="node-image">Optional Image:</label>
-                        <div class="file-input-wrapper">
-                            <input type="file" id="node-image" accept="image/*" onchange="previewImage(event)">
-                            <label for="node-image" class="file-input-label">📷 Add Image</label>
+                </div>
+
+                <!-- Right Column - Flowchart Display -->
+                <div class="flowchart-column">
+                    <div class="panel flowchart-panel">
+                        <div class="flowchart-header">
+                            <div class="flowchart-title">📊 Current Flowchart</div>
+                            <div class="flowchart-stats" id="flowchart-stats">0 nodes</div>
                         </div>
-                        <div id="image-preview" class="image-preview hidden">
-                            <img id="preview-img" alt="Preview">
-                            <button type="button" class="btn btn-danger" onclick="removeImage()" style="margin-top: 10px;">Remove Image</button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Options:</label>
-                        <div class="options-container" id="options-container">
-                            <div class="option-item">
-                                <input type="text" placeholder="Option label (e.g., Yes)" required>
-                                <input type="text" placeholder="Next node ID (e.g., verify-id)" required>
-                                <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+                        
+                        <div id="flowchart-content">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <div class="empty-state-text">No nodes created yet</div>
+                                <div class="empty-state-subtext">Start by adding your first node using the form on the left</div>
                             </div>
                         </div>
-                        <button type="button" class="btn btn-secondary" onclick="addOption()">+ Add Option</button>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-large" id="submit-btn">Add Node</button>
-                    <button type="button" class="btn btn-secondary btn-large hidden" id="cancel-edit-btn" onclick="cancelEdit()">Cancel Edit</button>
-                </form>
-            </div>
 
-            <div class="panel">
-                <h2>📊 Current Flowchart</h2>
-                <div id="nodes-list" class="nodes-list">
-                    <p style="text-align: center; color: #666;">No nodes created yet</p>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <button class="btn btn-success" onclick="exportFlowchart()">💾 Export JSON</button>
-                    <div class="file-input-wrapper" style="margin-top: 10px;">
-                        <input type="file" id="import-file" accept=".json" onchange="importFlowchart(event)">
-                        <label for="import-file" class="file-input-label">📁 Import JSON</label>
+                        <div class="flowchart-actions">
+                            <button class="btn btn-success" onclick="exportFlowchart()">💾 Export JSON</button>
+                            <div class="file-input-wrapper">
+                                <input type="file" id="import-file" accept=".json" onchange="importFlowchart(event)">
+                                <label for="import-file" class="file-input-label">📁 Import JSON</label>
+                            </div>
+                            <button class="btn btn-danger" onclick="clearFlowchart()">🗑️ Clear All</button>
+                        </div>
                     </div>
-                    <button class="btn btn-danger" onclick="clearFlowchart()" style="margin-top: 10px; width: 100%;">🗑️ Clear All</button>
                 </div>
             </div>
         </div>
@@ -492,7 +848,7 @@
                 image: currentImageData
             };
             
-            updateNodesDisplay();
+            updateFlowchartDisplay();
             resetForm();
             
             // Show success message
@@ -500,34 +856,145 @@
             alert(`Node "${nodeId}" ${action} successfully!`);
         });
 
-        function updateNodesDisplay() {
-            const nodesList = document.getElementById('nodes-list');
+        function updateFlowchartDisplay() {
+            const content = document.getElementById('flowchart-content');
+            const stats = document.getElementById('flowchart-stats');
             
-            if (Object.keys(flowchart).length === 0) {
-                nodesList.innerHTML = '<p style="text-align: center; color: #666;">No nodes created yet</p>';
+            const nodeCount = Object.keys(flowchart).length;
+            stats.textContent = `${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;
+            
+            if (nodeCount === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">No nodes created yet</div>
+                        <div class="empty-state-subtext">Start by adding your first node using the form on the left</div>
+                    </div>
+                `;
                 return;
             }
             
-            let html = '';
+            // Categorize nodes
+            const startNodes = [];
+            const middleNodes = [];
+            const endNodes = [];
+            
             Object.values(flowchart).forEach(node => {
-                const optionsText = node.options.map(opt => `${opt.label} → ${opt.nextNodeId}`).join(', ');
-                const hasImage = node.image ? ' 📷' : '';
-                html += `
-                    <div class="node-item">
-                        <div>
-                            <strong>${node.id}${hasImage}</strong><br>
-                            <small>${node.instruction}</small><br>
-                            <small style="color: #666;">Options: ${optionsText}</small>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem; margin-right: 5px;" onclick="editNode('${node.id}')">Edit</button>
-                            <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteNode('${node.id}')">Delete</button>
-                        </div>
-                    </div>
-                `;
+                // Check if this node is referenced by others
+                const isReferenced = Object.values(flowchart).some(otherNode => 
+                    otherNode.options.some(option => option.nextNodeId === node.id)
+                );
+                
+                // Check if this node references others
+                const hasValidReferences = node.options.some(option => flowchart[option.nextNodeId]);
+                
+                if (node.id === 'start' || (!isReferenced && hasValidReferences)) {
+                    startNodes.push(node);
+                } else if (!hasValidReferences || node.options.every(option => !flowchart[option.nextNodeId])) {
+                    endNodes.push(node);
+                } else {
+                    middleNodes.push(node);
+                }
             });
             
-            nodesList.innerHTML = html;
+            let html = '<div class="flowchart-sections">';
+            
+            // Start nodes section
+            if (startNodes.length > 0) {
+                html += createFlowchartSection('Starting Points', '🚀', startNodes, 'start-node', 'start-section');
+            }
+            
+            // Middle nodes section
+            if (middleNodes.length > 0) {
+                html += createFlowchartSection('Process Steps', '🔄', middleNodes, '', 'middle-section');
+            }
+            
+            // End nodes section
+            if (endNodes.length > 0) {
+                html += createFlowchartSection('End Points', '🏁', endNodes, 'end-node', 'end-section');
+            }
+            
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        function createNodeCard(node, extraClass = '') {
+            const hasImage = node.image ? true : false;
+            const brokenLinks = node.options.filter(option => !flowchart[option.nextNodeId]);
+            
+            return `
+                <div class="node-card ${extraClass}">
+                    <div class="node-header">
+                        <div class="node-id-badge">${node.id}</div>
+                        <div class="node-indicators">
+                            ${hasImage ? '<div class="node-indicator has-image" title="Has image">📷</div>' : ''}
+                            ${brokenLinks.length > 0 ? '<div class="node-indicator" style="background: #e74c3c; color: white;" title="Broken links">⚠️</div>' : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="node-instruction-text">${node.instruction}</div>
+                    
+                    <div class="node-options">
+                        ${node.options.map(option => {
+                            const isValid = flowchart[option.nextNodeId];
+                            return `
+                                <div class="option-flow" ${!isValid ? 'style="border-left-color: #e74c3c; background: #ffeaea;"' : ''}>
+                                    <span class="option-label">${option.label}</span>
+                                    <span class="option-arrow">→</span>
+                                    <span class="option-target" ${!isValid ? 'style="color: #e74c3c;"' : ''}>${option.nextNodeId}</span>
+                                    ${!isValid ? ' <span style="color: #e74c3c; font-size: 0.7rem;">⚠️</span>' : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <div class="node-actions">
+                        <button class="btn btn-primary" onclick="editNode('${node.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteNode('${node.id}')">🗑️ Delete</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createFlowchartSection(title, emoji, nodes, sectionClass = '', sectionId = '') {
+            const shouldCollapse = nodes.length > 3;
+            const collapsedClass = shouldCollapse ? 'collapsed' : '';
+            
+            return `
+                <div class="flowchart-section ${collapsedClass}" ${sectionId ? `id="${sectionId}"` : ''}>
+                    <div class="section-header">
+                        <div class="section-title">
+                            ${emoji} ${title}
+                        </div>
+                        <div class="section-count">${nodes.length}</div>
+                    </div>
+                    <div class="nodes-grid">
+                        ${nodes.map(node => createNodeCard(node, sectionClass)).join('')}
+                    </div>
+                    ${shouldCollapse ? 
+                        `<button class="show-more-btn" onclick="toggleSection('${sectionId || title.toLowerCase().replace(/\s+/g, '-')}')">
+                            📋 Show More (${nodes.length - 3} hidden)
+                        </button>` : ''
+                    }
+                </div>
+            `;
+        }
+
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const btn = section.querySelector('.show-more-btn');
+            const isCollapsed = section.classList.contains('collapsed');
+            
+            if (isCollapsed) {
+                section.classList.remove('collapsed');
+                btn.textContent = '📋 Show Less';
+                btn.classList.add('show-less');
+            } else {
+                section.classList.add('collapsed');
+                const totalNodes = section.querySelectorAll('.node-card').length;
+                btn.textContent = `📋 Show More (${totalNodes - 3} hidden)`;
+                btn.classList.remove('show-less');
+            }
         }
 
         function resetForm() {
@@ -604,7 +1071,7 @@
         function deleteNode(nodeId) {
             if (confirm(`Are you sure you want to delete node "${nodeId}"?`)) {
                 delete flowchart[nodeId];
-                updateNodesDisplay();
+                updateFlowchartDisplay();
             }
         }
 
@@ -649,7 +1116,7 @@
                     }
                     
                     flowchart = importedFlowchart;
-                    updateNodesDisplay();
+                    updateFlowchartDisplay();
                     alert('Flowchart imported successfully!');
                 } catch (error) {
                     alert('Error importing flowchart: ' + error.message);
@@ -665,7 +1132,7 @@
         function clearFlowchart() {
             if (confirm('Are you sure you want to clear all nodes? This cannot be undone.')) {
                 flowchart = {};
-                updateNodesDisplay();
+                updateFlowchartDisplay();
                 resetForm();
             }
         }
@@ -693,10 +1160,11 @@
             
             let html = `
                 <div class="current-node">
-                    <div class="node-id">Node: ${currentNode.id}</div>
+                    <div class="node-id">Current Node: ${currentNode.id}</div>
                     <div class="node-instruction">${currentNode.instruction}</div>
                     ${currentNode.image ? `<div class="node-image"><img src="${currentNode.image}" alt="Node illustration"></div>` : ''}
                 </div>
+                <div class="navigate-options">
             `;
             
             // Add option buttons
@@ -708,6 +1176,8 @@
                 `;
             });
             
+            html += `</div>`;
+            
             // Add navigation controls
             html += `
                 <div class="navigation-buttons">
@@ -715,7 +1185,7 @@
                         ← Back
                     </button>
                     <button class="btn btn-secondary" onclick="resetNavigation()">
-                        🏠 Start
+                        🏠 Start Over
                     </button>
                 </div>
             `;
@@ -781,7 +1251,7 @@
         }
 
         // Initialize
-        updateNodesDisplay();
+        updateFlowchartDisplay();
     </script>
 </body>
 </html>
