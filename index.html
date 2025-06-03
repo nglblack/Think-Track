@@ -508,6 +508,38 @@
             line-height: 1.4;
             margin-bottom: 15px;
             font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .node-instruction-text a {
+            color: #667eea;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+        .node-instruction {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .node-instruction a {
+            color: #667eea;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+
+        .node-instruction a:hover {
+            color: #5a6fd8;
+            text-decoration: underline;
+        }
+
+        .node-instruction-text a:hover {
+            color: #5a6fd8;
+            text-decoration: underline;
         }
 
         .node-options {
@@ -691,6 +723,19 @@
             line-height: 1.4;
             margin-bottom: 10px;
             font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .search-result-instruction a {
+            color: #667eea;
+            text-decoration: underline;
+            transition: color 0.3s ease;
+        }
+
+        .search-result-instruction a:hover {
+            color: #5a6fd8;
+            text-decoration: underline;
         }
 
         .search-result-options {
@@ -1265,7 +1310,7 @@
                         </div>
                     </div>
                     
-                    <div class="node-instruction-text">${node.instruction}</div>
+                    <div class="node-instruction-text">${linkifyText(node.instruction)}</div>
                     
                     <div class="node-options">
                         ${node.options.map(option => {
@@ -1494,7 +1539,7 @@
             let html = `
                 <div class="current-node">
                     <div class="node-id">Current Node: ${currentNode.id}</div>
-                    <div class="node-instruction">${currentNode.instruction}</div>
+                    <div class="node-instruction">${linkifyText(currentNode.instruction)}</div>
                     ${currentNode.image ? `<div class="node-image"><img src="${currentNode.image}" alt="Node illustration"></div>` : ''}
                 </div>
                 <div class="navigate-options">
@@ -1706,7 +1751,7 @@
                             <button class="btn btn-primary" onclick="event.stopPropagation(); editNode('${node.id}')">Edit</button>
                         </div>
                     </div>
-                    <div class="search-result-instruction">${highlightText(node.instruction, query)}</div>
+                    <div class="search-result-instruction">${linkifyText(highlightText(node.instruction, query))}</div>
                     <div class="search-result-options">
                         ${node.options.map(option => 
                             `<span class="search-result-option">${highlightText(option.label, query)} → ${highlightText(option.nextNodeId, query)}</span>`
@@ -1724,7 +1769,7 @@
         }
 
         function escapeRegExp(string) {
-            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\                        { "label": "I value my intestines", "nextNodeI');
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
         function selectSearchResult(nodeId) {
@@ -1780,6 +1825,21 @@
         } else {
             setupSearchEventListeners();
         }
+        // Function to convert URLs in text to clickable links
+        function linkifyText(text) {
+            if (!text) return text;
+            
+            // Regular expression to match URLs
+            const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
+            
+            return text.replace(urlRegex, function(url) {
+                // Clean up URL (remove trailing punctuation that's likely not part of the URL)
+                let cleanUrl = url.replace(/[.,;:!?)]$/, '');
+                let trailingPunct = url.slice(cleanUrl.length);
+                
+                return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>${trailingPunct}`;
+            });
+        }        
     </script>
 </body>
 </html>
