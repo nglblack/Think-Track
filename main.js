@@ -969,6 +969,7 @@ function deleteNode(nodeId) {
    }
 }
 
+// Enhanced export function with custom dialog - REPLACE the existing exportFlowchart() function
 async function exportFlowchart() {
    if (Object.keys(flowchart).length === 0) {
        alert('No flowchart to export. Please create some nodes first.');
@@ -993,51 +994,239 @@ async function exportFlowchart() {
                ],
            });
            
-           // Create a writable stream
            const writable = await fileHandle.createWritable();
-           
-           // Write the JSON data to the file
            await writable.write(dataStr);
-           
-           // Close the file and write the contents to disk
            await writable.close();
            
-           alert('Flowchart exported successfully!');
+           showExportSuccess();
            
        } catch (error) {
-           // User cancelled the save dialog or another error occurred
            if (error.name !== 'AbortError') {
                console.error('Error saving file:', error);
                alert('Error saving file: ' + error.message);
            }
-           // If user cancelled, do nothing (no alert needed)
        }
    } else {
-       // Fallback for browsers that don't support File System Access API
-       // Show a custom dialog to get the filename
-       const filename = prompt('Enter filename for export:', 'flowchart.json');
+       // Use custom modal dialog for better UX
+       showCustomSaveDialog(dataStr);
+   }
+}
+
+// Custom save dialog for browsers without File System Access API
+function showCustomSaveDialog(dataStr) {
+   // Create modal overlay
+   const overlay = document.createElement('div');
+   overlay.style.cssText = `
+       position: fixed;
+       top: 0;
+       left: 0;
+       width: 100%;
+       height: 100%;
+       background: rgba(0, 0, 0, 0.5);
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       z-index: 10000;
+       backdrop-filter: blur(5px);
+   `;
+   
+   // Create modal dialog
+   const modal = document.createElement('div');
+   modal.style.cssText = `
+       background: white;
+       padding: 30px;
+       border-radius: 15px;
+       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+       max-width: 500px;
+       width: 90%;
+       text-align: center;
+   `;
+   
+   modal.innerHTML = `
+       <h3 style="margin: 0 0 20px 0; color: #333; font-size: 1.3rem;">📄 Export Flowchart</h3>
+       <p style="margin: 0 0 20px 0; color: #666; line-height: 1.4;">
+           Choose a filename for your flowchart export:
+       </p>
+       <div style="margin-bottom: 20px;">
+           <input 
+               type="text" 
+               id="export-filename" 
+               value="flowchart.json"
+               style="
+                   width: 100%;
+                   padding: 12px;
+                   border: 2px solid #e0e0e0;
+                   border-radius: 8px;
+                   font-size: 1rem;
+                   text-align: center;
+                   box-sizing: border-box;
+               "
+               placeholder="Enter filename..."
+           >
+       </div>
+       <div style="display: flex; gap: 12px; justify-content: center;">
+           <button 
+               id="export-cancel-btn"
+               style="
+                   padding: 12px 24px;
+                   background: #95a5a6;
+                   color: white;
+                   border: none;
+                   border-radius: 8px;
+                   font-size: 1rem;
+                   font-weight: 600;
+                   cursor: pointer;
+                   transition: all 0.3s ease;
+               "
+           >
+               Cancel
+           </button>
+           <button 
+               id="export-save-btn"
+               style="
+                   padding: 12px 24px;
+                   background: #27ae60;
+                   color: white;
+                   border: none;
+                   border-radius: 8px;
+                   font-size: 1rem;
+                   font-weight: 600;
+                   cursor: pointer;
+                   transition: all 0.3s ease;
+               "
+           >
+               💾 Export
+           </button>
+       </div>
+   `;
+   
+   overlay.appendChild(modal);
+   document.body.appendChild(overlay);
+   
+   // Focus the input field and select the filename part
+   const filenameInput = document.getElementById('export-filename');
+   filenameInput.focus();
+   filenameInput.setSelectionRange(0, filenameInput.value.lastIndexOf('.'));
+   
+   // Handle cancel
+   const cancelBtn = document.getElementById('export-cancel-btn');
+   const closeModal = () => {
+       document.body.removeChild(overlay);
+   };
+   
+   cancelBtn.addEventListener('click', closeModal);
+   overlay.addEventListener('click', (e) => {
+       if (e.target === overlay) closeModal();
+   });
+   
+   // Handle save
+   const saveBtn = document.getElementById('export-save-btn');
+   const performSave = () => {
+       let filename = filenameInput.value.trim();
        
-       if (filename === null) {
-           // User cancelled
+       if (!filename) {
+           filenameInput.focus();
+           filenameInput.style.borderColor = '#e74c3c';
+           setTimeout(() => {
+               filenameInput.style.borderColor = '#e0e0e0';
+           }, 2000);
            return;
        }
        
-       // Ensure the filename has .json extension
-       const finalFilename = filename.endsWith('.json') ? filename : filename + '.json';
+       // Ensure .json extension
+       if (!filename.endsWith('.json')) {
+           filename += '.json';
+       }
        
-       // Use the traditional download method
+       // Download the file
        const dataBlob = new Blob([dataStr], {type: 'application/json'});
        const url = URL.createObjectURL(dataBlob);
        
        const link = document.createElement('a');
        link.href = url;
-       link.download = finalFilename;
+       link.download = filename;
        link.click();
        
        URL.revokeObjectURL(url);
        
-       alert('Flowchart exported successfully!');
+       closeModal();
+       showExportSuccess();
+   };
+   
+   saveBtn.addEventListener('click', performSave);
+   
+   // Handle Enter key
+   filenameInput.addEventListener('keydown', (e) => {
+       if (e.key === 'Enter') {
+           performSave();
+       } else if (e.key === 'Escape') {
+           closeModal();
+       }
+   });
+   
+   // Handle Escape key globally
+   const handleEscape = (e) => {
+       if (e.key === 'Escape') {
+           closeModal();
+           document.removeEventListener('keydown', handleEscape);
+       }
+   };
+   document.addEventListener('keydown', handleEscape);
+}
+
+// Success notification
+function showExportSuccess() {
+   // Create success notification
+   const notification = document.createElement('div');
+   notification.style.cssText = `
+       position: fixed;
+       top: 20px;
+       right: 20px;
+       background: #27ae60;
+       color: white;
+       padding: 15px 20px;
+       border-radius: 10px;
+       box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+       z-index: 10001;
+       font-weight: 600;
+       animation: slideInRight 0.3s ease;
+   `;
+   
+   notification.innerHTML = `
+       <div style="display: flex; align-items: center; gap: 8px;">
+           <span>✅</span>
+           <span>Flowchart exported successfully!</span>
+       </div>
+   `;
+   
+   // Add animation keyframes
+   if (!document.getElementById('export-animations')) {
+       const style = document.createElement('style');
+       style.id = 'export-animations';
+       style.textContent = `
+           @keyframes slideInRight {
+               from { transform: translateX(100%); opacity: 0; }
+               to { transform: translateX(0); opacity: 1; }
+           }
+           @keyframes slideOutRight {
+               from { transform: translateX(0); opacity: 1; }
+               to { transform: translateX(100%); opacity: 0; }
+           }
+       `;
+       document.head.appendChild(style);
    }
+   
+   document.body.appendChild(notification);
+   
+   // Auto-remove after 3 seconds
+   setTimeout(() => {
+       notification.style.animation = 'slideOutRight 0.3s ease';
+       setTimeout(() => {
+           if (notification.parentNode) {
+               document.body.removeChild(notification);
+           }
+       }, 300);
+   }, 3000);
 }
 
 // Replace the importFlowchart function in main.js
