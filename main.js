@@ -3,11 +3,6 @@ let currentNodeId = 'start';
 let navigationHistory = [];
 let editingNodeId = null;
 let currentImageData = null;
-let isDragging = false;
-let dragOffset = { x: 0, y: 0 };
-let selectedNode = null;
-let canvasScale = 1;
-let canvasOffset = { x: 0, y: 0 };
 
 // Example flowcharts data
 const exampleFlowcharts = {
@@ -390,12 +385,22 @@ function renderFlowchart() {
 }
 
 function renderNode(node, container) {
+   console.log(`Rendering node ${node.id} with position:`, node.position);
+   
    const nodeEl = document.createElement('div');
    nodeEl.className = 'flowchart-node';
    nodeEl.id = `node-${node.id}`;
    nodeEl.style.position = 'absolute';
-   nodeEl.style.left = `${node.position?.x || 100}px`;
-   nodeEl.style.top = `${node.position?.y || 100}px`;
+   
+   // Use the stored position, with explicit defaults
+   const posX = (node.position && typeof node.position.x === 'number') ? node.position.x : 100;
+   const posY = (node.position && typeof node.position.y === 'number') ? node.position.y : 100;
+   
+   nodeEl.style.left = `${posX}px`;
+   nodeEl.style.top = `${posY}px`;
+   
+   console.log(`Set node ${node.id} DOM position to: left=${posX}px, top=${posY}px`);
+   
    // Apply custom size if it exists, otherwise use fit-content
    if (node.customSize) {
        nodeEl.style.width = `${node.customSize.width}px`;
@@ -584,69 +589,16 @@ function renderNode(node, container) {
    actions.appendChild(deleteBtn);
    nodeEl.appendChild(actions);
    
-   // Add drag functionality
-   setupNodeDrag(nodeEl, node);
+   // Add drag functionality - IMPORTANT: Pass the actual flowchart node, not just the parameter
+   setupNodeDrag(nodeEl, flowchart[node.id]);
    
-   function setupNodeResize(resizeHandle, nodeEl, node) {
-   let isResizing = false;
-   let startPos = { x: 0, y: 0 };
-   let startSize = { width: 0, height: 0 };
-   
-   resizeHandle.addEventListener('mousedown', (e) => {
-       e.stopPropagation(); // Prevent drag from starting
-       
-       isResizing = true;
-       startPos = { x: e.clientX, y: e.clientY };
-       
-       const computedStyle = window.getComputedStyle(nodeEl);
-       startSize = {
-           width: parseInt(computedStyle.width),
-           height: parseInt(computedStyle.height)
-       };
-       
-       nodeEl.style.zIndex = '1000';
-       nodeEl.style.transition = 'none'; // Disable transitions during resize
-       
-       e.preventDefault();
-   });
-   
-   document.addEventListener('mousemove', (e) => {
-       if (!isResizing) return;
-       
-       const dx = e.clientX - startPos.x;
-       const dy = e.clientY - startPos.y;
-       
-       const newWidth = Math.max(160, startSize.width + dx); // Min width 160px
-       const newHeight = Math.max(120, startSize.height + dy); // Min height 120px
-       
-       nodeEl.style.width = `${newWidth}px`;
-       nodeEl.style.height = `${newHeight}px`;
-       nodeEl.style.maxWidth = 'none'; // Override max-width during manual resize
-       
-       // Store custom size in node data
-       if (!node.customSize) node.customSize = {};
-       node.customSize.width = newWidth;
-       node.customSize.height = newHeight;
-       
-       // Re-render connections
-       const svg = document.querySelector('#flowchart-content svg');
-       if (svg) {
-           renderConnections(svg);
-       }
-   });
-   
-   document.addEventListener('mouseup', () => {
-       if (!isResizing) return;
-       
-       isResizing = false;
-       nodeEl.style.zIndex = '2';
-       nodeEl.style.transition = 'all 0.2s ease'; // Re-enable transitions
-   });
-}
-
    container.appendChild(nodeEl);
+   
+   // Verify final position after rendering
+   console.log(`Node ${node.id} final DOM position: left=${nodeEl.style.left}, top=${nodeEl.style.top}`);
 }
 
+// Enhanced setupNodeDrag with better position tracking
 function setupNodeDrag(nodeEl, node) {
    let isDragging = false;
    let startPos = { x: 0, y: 0 };
@@ -668,6 +620,8 @@ function setupNodeDrag(nodeEl, node) {
        nodeEl.style.opacity = '0.8';
        nodeEl.style.transform = 'scale(1.05)';
        
+       console.log(`Started dragging ${node.id} from position:`, startNodePos);
+       
        e.preventDefault();
    });
    
@@ -680,22 +634,23 @@ function setupNodeDrag(nodeEl, node) {
        const newX = Math.max(0, startNodePos.x + dx);
        const newY = Math.max(0, startNodePos.y + dy);
        
+       // Update DOM position
        nodeEl.style.left = `${newX}px`;
        nodeEl.style.top = `${newY}px`;
        
-       // Update position in data structure immediately
+       // Update position in BOTH the node reference AND the main flowchart object
        if (!node.position) node.position = {};
        node.position.x = newX;
        node.position.y = newY;
        
-       // Also update the flowchart object directly to ensure it's saved
+       // CRITICAL: Also update the main flowchart object
        if (flowchart[node.id]) {
            if (!flowchart[node.id].position) flowchart[node.id].position = {};
            flowchart[node.id].position.x = newX;
            flowchart[node.id].position.y = newY;
        }
        
-       // Dynamically expand canvas if needed
+       // Canvas expansion logic (keeping existing code)
        const content = document.getElementById('flowchart-content');
        const nodeWidth = node.customSize?.width || 350;
        const nodeHeight = node.customSize?.height || 200;
@@ -715,14 +670,12 @@ function setupNodeDrag(nodeEl, node) {
            content.style.minWidth = `${newCanvasWidth}px`;
            content.style.minHeight = `${newCanvasHeight}px`;
            
-           // Update SVG size
            const svg = content.querySelector('svg');
            if (svg) {
                svg.style.width = `${newCanvasWidth}px`;
                svg.style.height = `${newCanvasHeight}px`;
            }
            
-           // Update node container size
            const nodeContainer = content.children[1];
            if (nodeContainer) {
                nodeContainer.style.width = `${newCanvasWidth}px`;
@@ -749,18 +702,19 @@ function setupNodeDrag(nodeEl, node) {
        const finalX = parseInt(nodeEl.style.left) || 0;
        const finalY = parseInt(nodeEl.style.top) || 0;
        
+       // Triple-save to ensure position is stored everywhere
        if (!node.position) node.position = {};
        node.position.x = finalX;
        node.position.y = finalY;
        
-       // Ensure the main flowchart object is updated
        if (flowchart[node.id]) {
            if (!flowchart[node.id].position) flowchart[node.id].position = {};
            flowchart[node.id].position.x = finalX;
            flowchart[node.id].position.y = finalY;
        }
        
-       console.log(`Final position for ${node.id}:`, {x: finalX, y: finalY});
+       console.log(`Finished dragging ${node.id} to position:`, {x: finalX, y: finalY});
+       console.log(`Confirmed in flowchart[${node.id}]:`, flowchart[node.id].position);
    });
 }
 
@@ -993,27 +947,35 @@ function deleteNode(nodeId) {
    }
 }
 
-// Enhanced export function specifically for Chrome issues
-// Enhanced export function that ensures node positions are saved
+// Enhanced export function with robust position saving and debugging
 async function exportFlowchart() {
    if (Object.keys(flowchart).length === 0) {
        alert('No flowchart to export. Please create some nodes first.');
        return;
    }
    
+   console.log('=== EXPORT DEBUG START ===');
+   console.log('Flowchart before position save:', JSON.parse(JSON.stringify(flowchart)));
+   
    // Save current node positions before export
    saveCurrentNodePositions();
    
+   console.log('Flowchart after position save:', JSON.parse(JSON.stringify(flowchart)));
+   
+   // Force a small delay to ensure all position updates are complete
+   await new Promise(resolve => setTimeout(resolve, 100));
+   
    const dataStr = JSON.stringify(flowchart, null, 2);
+   console.log('Final export data:', dataStr);
+   console.log('=== EXPORT DEBUG END ===');
    
    // Always use custom dialog for consistent experience
-   console.log('Using custom save dialog for consistent experience');
    showCustomSaveDialog(dataStr);
 }
 
-// Function to save current node positions from DOM to flowchart data
+// Enhanced function to save current node positions from DOM to flowchart data
 function saveCurrentNodePositions() {
-   console.log('Saving current node positions...');
+   console.log('=== POSITION SAVE DEBUG START ===');
    
    Object.keys(flowchart).forEach(nodeId => {
        const nodeEl = document.getElementById(`node-${nodeId}`);
@@ -1022,11 +984,19 @@ function saveCurrentNodePositions() {
            const currentLeft = parseInt(nodeEl.style.left) || 0;
            const currentTop = parseInt(nodeEl.style.top) || 0;
            
-           // Update the flowchart data with current position
+           console.log(`Node ${nodeId} DOM position:`, {
+               left: nodeEl.style.left,
+               top: nodeEl.style.top,
+               parsedX: currentLeft,
+               parsedY: currentTop
+           });
+           
+           // Ensure position object exists
            if (!flowchart[nodeId].position) {
                flowchart[nodeId].position = {};
            }
            
+           // Update the flowchart data with current position
            flowchart[nodeId].position.x = currentLeft;
            flowchart[nodeId].position.y = currentTop;
            
@@ -1039,9 +1009,65 @@ function saveCurrentNodePositions() {
                flowchart[nodeId].customSize.height = parseInt(nodeEl.style.height);
            }
            
-           console.log(`Saved position for ${nodeId}:`, flowchart[nodeId].position);
+           console.log(`Updated flowchart[${nodeId}].position:`, flowchart[nodeId].position);
+       } else {
+           console.warn(`Node element not found: node-${nodeId}`);
        }
    });
+   
+   console.log('=== POSITION SAVE DEBUG END ===');
+}
+
+// Enhanced import function with position debugging
+function importFlowchart(event) {
+   const file = event.target.files[0];
+   if (!file) return;
+   
+   const reader = new FileReader();
+   reader.onload = function(e) {
+       try {
+           const importedFlowchart = JSON.parse(e.target.result);
+           
+           console.log('=== IMPORT DEBUG START ===');
+           console.log('Imported flowchart:', importedFlowchart);
+           
+           // Validate the imported data
+           if (typeof importedFlowchart !== 'object' || importedFlowchart === null) {
+               throw new Error('Invalid flowchart format - must be a valid JSON object');
+           }
+           
+           // Additional validation to ensure it has the right structure
+           for (let nodeId in importedFlowchart) {
+               const node = importedFlowchart[nodeId];
+               if (!node.id || !node.instruction || !Array.isArray(node.options)) {
+                   throw new Error(`Invalid node structure for "${nodeId}"`);
+               }
+               
+               // Log position data for debugging
+               console.log(`Node ${nodeId} imported position:`, node.position);
+           }
+           
+           // Set the flowchart data
+           flowchart = importedFlowchart;
+           
+           console.log('Final flowchart after import:', JSON.parse(JSON.stringify(flowchart)));
+           console.log('=== IMPORT DEBUG END ===');
+           
+           // Update the display (this should use the imported positions)
+           updateFlowchartDisplay();
+           resetForm();
+           
+           alert('Flowchart imported successfully!');
+           
+       } catch (error) {
+           alert('Error importing flowchart: ' + error.message);
+           console.error('Import error:', error);
+       }
+   };
+   reader.readAsText(file);
+   
+   // Clear the file input so the same file can be imported again if needed
+   event.target.value = '';
 }
 
 // Enhanced custom save dialog with better Chrome support
@@ -1342,47 +1368,6 @@ function showExportSuccess(message = 'Flowchart exported successfully!') {
    }, 4000);
 }
 
-// Replace the importFlowchart function in main.js
-function importFlowchart(event) {
-   const file = event.target.files[0];
-   if (!file) return;
-   
-   const reader = new FileReader();
-   reader.onload = function(e) {
-       try {
-           const importedFlowchart = JSON.parse(e.target.result);
-           
-           // Validate the imported data
-           if (typeof importedFlowchart !== 'object' || importedFlowchart === null) {
-               throw new Error('Invalid flowchart format - must be a valid JSON object');
-           }
-           
-           // Additional validation to ensure it has the right structure
-           for (let nodeId in importedFlowchart) {
-               const node = importedFlowchart[nodeId];
-               if (!node.id || !node.instruction || !Array.isArray(node.options)) {
-                   throw new Error(`Invalid node structure for "${nodeId}"`);
-               }
-               // Remove existing position data to force re-positioning
-               delete node.position;
-           }
-           
-           flowchart = importedFlowchart;
-           
-           // Apply auto-layout to properly position all imported nodes
-           autoLayoutNodes();
-           
-           alert('Flowchart imported successfully!');
-       } catch (error) {
-           alert('Error importing flowchart: ' + error.message);
-           console.error('Import error:', error);
-       }
-   };
-   reader.readAsText(file);
-   
-   // Clear the file input so the same file can be imported again if needed
-   event.target.value = '';
-}
 
 function clearFlowchart() {
    if (confirm('Are you sure you want to clear all nodes? This cannot be undone.')) {
