@@ -969,22 +969,75 @@ function deleteNode(nodeId) {
    }
 }
 
-function exportFlowchart() {
+async function exportFlowchart() {
    if (Object.keys(flowchart).length === 0) {
        alert('No flowchart to export. Please create some nodes first.');
        return;
    }
    
    const dataStr = JSON.stringify(flowchart, null, 2);
-   const dataBlob = new Blob([dataStr], {type: 'application/json'});
-   const url = URL.createObjectURL(dataBlob);
    
-   const link = document.createElement('a');
-   link.href = url;
-   link.download = 'flowchart.json';
-   link.click();
-   
-   URL.revokeObjectURL(url);
+   // Check if the File System Access API is supported
+   if ('showSaveFilePicker' in window) {
+       try {
+           // Use the modern File System Access API
+           const fileHandle = await window.showSaveFilePicker({
+               suggestedName: 'flowchart.json',
+               types: [
+                   {
+                       description: 'JSON files',
+                       accept: {
+                           'application/json': ['.json'],
+                       },
+                   },
+               ],
+           });
+           
+           // Create a writable stream
+           const writable = await fileHandle.createWritable();
+           
+           // Write the JSON data to the file
+           await writable.write(dataStr);
+           
+           // Close the file and write the contents to disk
+           await writable.close();
+           
+           alert('Flowchart exported successfully!');
+           
+       } catch (error) {
+           // User cancelled the save dialog or another error occurred
+           if (error.name !== 'AbortError') {
+               console.error('Error saving file:', error);
+               alert('Error saving file: ' + error.message);
+           }
+           // If user cancelled, do nothing (no alert needed)
+       }
+   } else {
+       // Fallback for browsers that don't support File System Access API
+       // Show a custom dialog to get the filename
+       const filename = prompt('Enter filename for export:', 'flowchart.json');
+       
+       if (filename === null) {
+           // User cancelled
+           return;
+       }
+       
+       // Ensure the filename has .json extension
+       const finalFilename = filename.endsWith('.json') ? filename : filename + '.json';
+       
+       // Use the traditional download method
+       const dataBlob = new Blob([dataStr], {type: 'application/json'});
+       const url = URL.createObjectURL(dataBlob);
+       
+       const link = document.createElement('a');
+       link.href = url;
+       link.download = finalFilename;
+       link.click();
+       
+       URL.revokeObjectURL(url);
+       
+       alert('Flowchart exported successfully!');
+   }
 }
 
 // Replace the importFlowchart function in main.js
