@@ -683,10 +683,17 @@ function setupNodeDrag(nodeEl, node) {
        nodeEl.style.left = `${newX}px`;
        nodeEl.style.top = `${newY}px`;
        
-       // Update position in data
+       // Update position in data structure immediately
        if (!node.position) node.position = {};
        node.position.x = newX;
        node.position.y = newY;
+       
+       // Also update the flowchart object directly to ensure it's saved
+       if (flowchart[node.id]) {
+           if (!flowchart[node.id].position) flowchart[node.id].position = {};
+           flowchart[node.id].position.x = newX;
+           flowchart[node.id].position.y = newY;
+       }
        
        // Dynamically expand canvas if needed
        const content = document.getElementById('flowchart-content');
@@ -737,6 +744,23 @@ function setupNodeDrag(nodeEl, node) {
        nodeEl.style.zIndex = '2';
        nodeEl.style.opacity = '1';
        nodeEl.style.transform = 'scale(1)';
+       
+       // Final position save when drag ends
+       const finalX = parseInt(nodeEl.style.left) || 0;
+       const finalY = parseInt(nodeEl.style.top) || 0;
+       
+       if (!node.position) node.position = {};
+       node.position.x = finalX;
+       node.position.y = finalY;
+       
+       // Ensure the main flowchart object is updated
+       if (flowchart[node.id]) {
+           if (!flowchart[node.id].position) flowchart[node.id].position = {};
+           flowchart[node.id].position.x = finalX;
+           flowchart[node.id].position.y = finalY;
+       }
+       
+       console.log(`Final position for ${node.id}:`, {x: finalX, y: finalY});
    });
 }
 
@@ -970,21 +994,54 @@ function deleteNode(nodeId) {
 }
 
 // Enhanced export function specifically for Chrome issues
+// Enhanced export function that ensures node positions are saved
 async function exportFlowchart() {
    if (Object.keys(flowchart).length === 0) {
        alert('No flowchart to export. Please create some nodes first.');
        return;
    }
    
+   // Save current node positions before export
+   saveCurrentNodePositions();
+   
    const dataStr = JSON.stringify(flowchart, null, 2);
    
-   // Force custom dialog for all browsers for consistent behavior
-   // Remove this condition to always use custom dialog:
-   // if ('showSaveFilePicker' in window) {
-   
-   // Always use custom dialog for better control
+   // Always use custom dialog for consistent experience
    console.log('Using custom save dialog for consistent experience');
    showCustomSaveDialog(dataStr);
+}
+
+// Function to save current node positions from DOM to flowchart data
+function saveCurrentNodePositions() {
+   console.log('Saving current node positions...');
+   
+   Object.keys(flowchart).forEach(nodeId => {
+       const nodeEl = document.getElementById(`node-${nodeId}`);
+       if (nodeEl) {
+           // Get current position from the DOM element
+           const currentLeft = parseInt(nodeEl.style.left) || 0;
+           const currentTop = parseInt(nodeEl.style.top) || 0;
+           
+           // Update the flowchart data with current position
+           if (!flowchart[nodeId].position) {
+               flowchart[nodeId].position = {};
+           }
+           
+           flowchart[nodeId].position.x = currentLeft;
+           flowchart[nodeId].position.y = currentTop;
+           
+           // Also save custom size if it exists
+           if (nodeEl.style.width && nodeEl.style.height) {
+               if (!flowchart[nodeId].customSize) {
+                   flowchart[nodeId].customSize = {};
+               }
+               flowchart[nodeId].customSize.width = parseInt(nodeEl.style.width);
+               flowchart[nodeId].customSize.height = parseInt(nodeEl.style.height);
+           }
+           
+           console.log(`Saved position for ${nodeId}:`, flowchart[nodeId].position);
+       }
+   });
 }
 
 // Enhanced custom save dialog with better Chrome support
