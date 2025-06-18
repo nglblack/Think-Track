@@ -338,15 +338,26 @@ function renderFlowchart() {
    // Clear existing content
    content.innerHTML = '';
    
+   // Calculate required canvas size based on node positions
+   let maxX = 0, maxY = 0;
+   Object.values(flowchart).forEach(node => {
+       if (node.position) {
+           maxX = Math.max(maxX, node.position.x + 400); // 400px for node width + margin
+           maxY = Math.max(maxY, node.position.y + 200); // 200px for node height + margin
+       }
+   });
+   const canvasWidth = Math.max(maxX, 1500);
+   const canvasHeight = Math.max(maxY, 1500);
+
    // Create SVG for connections
    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
    svg.style.position = 'absolute';
    svg.style.top = '0';
    svg.style.left = '0';
-   svg.style.width = '100%';
-   svg.style.height = '100%';
+   svg.style.width = `${canvasWidth}px`;
+   svg.style.height = `${canvasHeight}px`;
    svg.style.pointerEvents = 'none';
-   svg.style.zIndex = '1';
+   svg.style.zIndex = '10';
    content.appendChild(svg);
    
    // Create container for nodes
@@ -354,7 +365,7 @@ function renderFlowchart() {
    nodeContainer.style.position = 'relative';
    nodeContainer.style.width = '100%';
    nodeContainer.style.height = '100%';
-   nodeContainer.style.zIndex = '2';
+   nodeContainer.style.zIndex = '5';
    content.appendChild(nodeContainer);
    
    // Render nodes
@@ -373,7 +384,16 @@ function renderNode(node, container) {
    nodeEl.style.position = 'absolute';
    nodeEl.style.left = `${node.position?.x || 100}px`;
    nodeEl.style.top = `${node.position?.y || 100}px`;
-   nodeEl.style.width = '180px';
+   // Apply custom size if it exists, otherwise use fit-content
+   if (node.customSize) {
+       nodeEl.style.width = `${node.customSize.width}px`;
+       nodeEl.style.height = `${node.customSize.height}px`;
+       nodeEl.style.maxWidth = 'none';
+   } else {
+       nodeEl.style.width = 'fit-content';
+       nodeEl.style.maxWidth = '350px';
+   }
+   nodeEl.style.minWidth = '160px';
    nodeEl.style.minHeight = '120px';
    nodeEl.style.background = 'white';
    nodeEl.style.border = '2px solid #667eea';
@@ -383,7 +403,8 @@ function renderNode(node, container) {
    nodeEl.style.cursor = 'move';
    nodeEl.style.userSelect = 'none';
    nodeEl.style.fontSize = '0.85rem';
-   nodeEl.style.transition = 'all 0.2s ease';
+   nodeEl.style.wordWrap = 'break-word';
+   nodeEl.style.overflowWrap = 'break-word';
    
    // Add node type styling
    const isStart = node.id === 'start' || !Object.values(flowchart).some(n => 
@@ -554,6 +575,63 @@ function renderNode(node, container) {
    // Add drag functionality
    setupNodeDrag(nodeEl, node);
    
+   function setupNodeResize(resizeHandle, nodeEl, node) {
+   let isResizing = false;
+   let startPos = { x: 0, y: 0 };
+   let startSize = { width: 0, height: 0 };
+   
+   resizeHandle.addEventListener('mousedown', (e) => {
+       e.stopPropagation(); // Prevent drag from starting
+       
+       isResizing = true;
+       startPos = { x: e.clientX, y: e.clientY };
+       
+       const computedStyle = window.getComputedStyle(nodeEl);
+       startSize = {
+           width: parseInt(computedStyle.width),
+           height: parseInt(computedStyle.height)
+       };
+       
+       nodeEl.style.zIndex = '1000';
+       nodeEl.style.transition = 'none'; // Disable transitions during resize
+       
+       e.preventDefault();
+   });
+   
+   document.addEventListener('mousemove', (e) => {
+       if (!isResizing) return;
+       
+       const dx = e.clientX - startPos.x;
+       const dy = e.clientY - startPos.y;
+       
+       const newWidth = Math.max(160, startSize.width + dx); // Min width 160px
+       const newHeight = Math.max(120, startSize.height + dy); // Min height 120px
+       
+       nodeEl.style.width = `${newWidth}px`;
+       nodeEl.style.height = `${newHeight}px`;
+       nodeEl.style.maxWidth = 'none'; // Override max-width during manual resize
+       
+       // Store custom size in node data
+       if (!node.customSize) node.customSize = {};
+       node.customSize.width = newWidth;
+       node.customSize.height = newHeight;
+       
+       // Re-render connections
+       const svg = document.querySelector('#flowchart-content svg');
+       if (svg) {
+           renderConnections(svg);
+       }
+   });
+   
+   document.addEventListener('mouseup', () => {
+       if (!isResizing) return;
+       
+       isResizing = false;
+       nodeEl.style.zIndex = '2';
+       nodeEl.style.transition = 'all 0.2s ease'; // Re-enable transitions
+   });
+}
+
    container.appendChild(nodeEl);
 }
 
@@ -654,8 +732,9 @@ function renderConnections(svg) {
 
 function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
    const nodePos = node.position || { x: 100, y: 100 };
-   const nodeWidth = 180;
-   const nodeHeight = 120; // Approximate minimum height
+   const nodeEl = document.getElementById(`node-${node.id}`);
+   const nodeWidth = nodeEl ? nodeEl.offsetWidth : 180;
+   const nodeHeight = nodeEl ? nodeEl.offsetHeight : (node.customSize?.height || 120);
    
    if (type === 'input') {
        // Connection point at the top-center of the target node
@@ -664,7 +743,27 @@ function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
            y: nodePos.y
        };
    } else {
-       // Connection point at the bottom of the source node, spread across width for multiple options
+       // For output connections, find the specific option element
+       if (nodeEl) {
+           const optionsContainer = nodeEl.children[2]; // Header, instruction, then options
+           if (optionsContainer && optionsContainer.children[optionIndex]) {
+               const optionEl = optionsContainer.children[optionIndex];
+               const optionRect = optionEl.getBoundingClientRect();
+               const nodeRect = nodeEl.getBoundingClientRect();
+               const canvasRect = document.getElementById('flowchart-content').getBoundingClientRect();
+               
+               // Calculate relative position within the canvas
+               const relativeX = optionRect.left - canvasRect.left + optionRect.width;
+               const relativeY = optionRect.top - canvasRect.top + optionRect.height / 2;
+               
+               return {
+                   x: relativeX,
+                   y: relativeY
+               };
+           }
+       }
+       
+       // Fallback to bottom of node if option element not found
        const spacing = nodeWidth / (totalOptions + 1);
        return {
            x: nodePos.x + spacing * (optionIndex + 1),

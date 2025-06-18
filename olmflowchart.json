@@ -1,0 +1,519 @@
+{
+  "start": {
+    "id": "start",
+    "instruction": "OLM Access Issue - What type of problem is the member experiencing?",
+    "options": [
+      {
+        "label": "Member is unable to log into their OLM",
+        "nextNodeId": "symitar"
+      },
+      {
+        "label": "Member's OLM features are restricted and member is being granted full OLM access",
+        "nextNodeId": "in-symitar"
+      },
+      {
+        "label": "Risk Evaluation Decline: Member is attempting an action in their OLM and getting an error",
+        "nextNodeId": "symitar-notes"
+      }
+    ],
+    "position": { "x": 300, "y": 50 }
+  },
+  "symitar-notes": {
+    "id": "symitar-notes",
+    "instruction": "In Symitar: Review notes and activity and ensure there are no red flags",
+    "options": [
+      {
+        "label": "Go to Alkami",
+        "nextNodeId": "bc-report"
+      }
+    ],
+    "position": { "x": 150, "y": 200 }
+  },
+  "bc-report": {
+    "id": "bc-report",
+    "instruction": "Review the BC activity report in Alkami",
+    "options": [
+      {
+        "label": "No Decline",
+        "nextNodeId": "not-fraud"
+      },
+      {
+        "label": "Decline",
+        "nextNodeId": "bc"
+      },
+      {
+        "label": "Decline & shows 675 or 991 score",
+        "nextNodeId": "cdnc"
+      }
+    ],
+    "position": { "x": 150, "y": 350 }
+  },
+  "not-fraud": {
+    "id": "not-fraud",
+    "instruction": "If the member's OLM is active in Alkami and Symitar, this is not a Fraud Related issue. Refer member/Agent to OLM team to continue to assist.",
+    "options": [],
+    "position": { "x": 50, "y": 500 }
+  },
+  "bc": {
+    "id": "bc",
+    "instruction": "Go to BioCatch",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "isp"
+      }
+    ],
+    "position": { "x": 250, "y": 500 }
+  },
+  "isp": {
+    "id": "isp",
+    "instruction": "Confirm what device and Internet Service Provider (ISP) the member is using, what action they are trying to take and if they use a VPN",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "bc-activity"
+      }
+    ],
+    "position": { "x": 250, "y": 650 }
+  },
+  "bc-activity": {
+    "id": "bc-activity",
+    "instruction": "Verify activity in BioCatch",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "scamlytics"
+      }
+    ],
+    "position": { "x": 250, "y": 800 }
+  },
+  "scamlytics": {
+    "id": "scamlytics",
+    "instruction": "Use Scamlytics to review IP address",
+    "options": [
+      {
+        "label": "Member's story does not match BC and there are concerns",
+        "nextNodeId": "interview"
+      },
+      {
+        "label": "Member's story matches BC and no red flags",
+        "nextNodeId": "wl"
+      }
+    ],
+    "position": { "x": 250, "y": 950 }
+  },
+  "wl": {
+    "id": "wl",
+    "instruction": "Add member to the standard (The MACU_UID_whitelist) Whitelist in BioCatch Rule Manager",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "wait-15min"
+      }
+    ],
+    "position": { "x": 150, "y": 1100 }
+  },
+  "wait-15min": {
+    "id": "wait-15min",
+    "instruction": "Advise member to log out and wait 15 minutes and this should resolve the error.",
+    "options": [],
+    "position": { "x": 150, "y": 1250 }
+  },
+  "interview": {
+    "id": "interview",
+    "instruction": "Take over the call to interview the member about the activity",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "interview-outcome"
+      }
+    ],
+    "position": { "x": 350, "y": 1100 }
+  },
+  "interview-outcome": {
+    "id": "interview-outcome",
+    "instruction": "Depending on conversation, the member may need to: Convert, update their username and password, or activity could be valid (If valid, unlock Alkami)",
+    "options": [],
+    "position": { "x": 350, "y": 1250 }
+  },
+  "in-symitar": {
+    "id": "in-symitar",
+    "instruction": "In Symitar - Check for OLM warnings",
+    "options": [
+      {
+        "label": "No OLM Warnings present in warnings/comments section on the main Symitar page",
+        "nextNodeId": "pref00"
+      },
+      {
+        "label": "OLM Warning present in warnings/Comments section on the main Symitar page",
+        "nextNodeId": "mobile"
+      }
+    ],
+    "position": { "x": 450, "y": 200 }
+  },
+  "mobile": {
+    "id": "mobile",
+    "instruction": "Run RG MOBILE and select unlock",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "pref00"
+      }
+    ],
+    "position": { "x": 550, "y": 350 }
+  },
+  "pref00": {
+    "id": "pref00",
+    "instruction": "Go to Pref 00 and verify the status is set up correctly",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "track96"
+      }
+    ],
+    "position": { "x": 450, "y": 500 }
+  },
+  "track96": {
+    "id": "track96",
+    "instruction": "Go to Tracking 96 and verify there is no X in front of the username and Xs are replaced with a Y on the services you are enabling (A2A, P2P, RDC, 3rd party payments)",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "alkami"
+      }
+    ],
+    "position": { "x": 450, "y": 650 }
+  },
+  "alkami": {
+    "id": "alkami",
+    "instruction": "Go to Alkami",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "active"
+      }
+    ],
+    "position": { "x": 450, "y": 800 }
+  },
+  "active": {
+    "id": "active",
+    "instruction": "Verify profile is active",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "package"
+      }
+    ],
+    "position": { "x": 450, "y": 950 }
+  },
+  "package": {
+    "id": "package",
+    "instruction": "Verify package is set up to the Default Retail Package",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "advise-member"
+      }
+    ],
+    "position": { "x": 450, "y": 1100 }
+  },
+  "advise-member": {
+    "id": "advise-member",
+    "instruction": "Advise the member to log out and wait 5-10 minutes prior to attempting again.",
+    "options": [],
+    "position": { "x": 450, "y": 1250 }
+  },
+  "symitar": {
+    "id": "symitar",
+    "instruction": "In Symitar - Check for fraud notes",
+    "options": [
+      {
+        "label": "No Fraud notes about OLM or Fraud Warnings",
+        "nextNodeId": "pref00-track96"
+      },
+      {
+        "label": "Fraud notes",
+        "nextNodeId": "notes"
+      }
+    ],
+    "position": { "x": 600, "y": 200 }
+  },
+  "pref00-track96": {
+    "id": "pref00-track96",
+    "instruction": "Check tracking 96 and Pref 00 for Fraud disabled",
+    "options": [
+      {
+        "label": "No Fraud Disabled",
+        "nextNodeId": "no-fraud"
+      },
+      {
+        "label": "Fraud Disabled",
+        "nextNodeId": "fraud"
+      }
+    ],
+    "position": { "x": 600, "y": 350 }
+  },
+  "no-fraud": {
+    "id": "no-fraud",
+    "instruction": "Go to Alkami",
+    "options": [
+      {
+        "label": "Status set to locked/disabled",
+        "nextNodeId": "locked"
+      },
+      {
+        "label": "Status set to active",
+        "nextNodeId": "member-can-login"
+      }
+    ],
+    "position": { "x": 550, "y": 500 }
+  },
+  "member-can-login": {
+    "id": "member-can-login",
+    "instruction": "At this point the member should be able to log in, if member is not able to log in, refer the member/agent to OLM Team",
+    "options": [],
+    "position": { "x": 500, "y": 650 }
+  },
+  "fraud": {
+    "id": "fraud",
+    "instruction": "Run script RG MOBILE and select \"Unlock Mobile Account\"",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "alkami1"
+      }
+    ],
+    "position": { "x": 650, "y": 500 }
+  },
+  "alkami1": {
+    "id": "alkami1",
+    "instruction": "Go to Alkami",
+    "options": [
+      {
+        "label": "Set Profile status to Active",
+        "nextNodeId": "member-can-login"
+      },
+      {
+        "label": "Status set to locked/disabled",
+        "nextNodeId": "locked"
+      }
+    ],
+    "position": { "x": 650, "y": 650 }
+  },
+  "locked": {
+    "id": "locked",
+    "instruction": "Check BC activity report or user authentication report to see what prompted the OLM to disable/lock",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "check-for-red-flags"
+      }
+    ],
+    "position": { "x": 750, "y": 500 }
+  },
+  "check-for-red-flags": {
+    "id": "check-for-red-flags",
+    "instruction": "Review Activity for red flags",
+    "options": [
+      {
+        "label": "No red flags",
+        "nextNodeId": "no-red-flags"
+      },
+      {
+        "label": "Yes red flags",
+        "nextNodeId": "red-flags-found"
+      }
+    ],
+    "position": { "x": 750, "y": 650 }
+  },
+  "no-red-flags": {
+    "id": "no-red-flags",
+    "instruction": "Advise of findings and next steps. (too many failed passwords etc.)",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "unlock-alkami"
+      }
+    ],
+    "position": { "x": 700, "y": 800 }
+  },
+  "unlock-alkami": {
+    "id": "unlock-alkami",
+    "instruction": "Unlock Alkami. The member should have access.",
+    "options": [],
+    "position": { "x": 700, "y": 950 }
+  },
+  "red-flags-found": {
+    "id": "red-flags-found",
+    "instruction": "Go to BC to review activity",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "use-scamlytics"
+      }
+    ],
+    "position": { "x": 800, "y": 800 }
+  },
+  "use-scamlytics": {
+    "id": "use-scamlytics",
+    "instruction": "Use Scamlytics to search the IP address",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "interview-member"
+      }
+    ],
+    "position": { "x": 800, "y": 950 }
+  },
+  "interview-member": {
+    "id": "interview-member",
+    "instruction": "Take over the call to interview the member about the activity (identify member's regular devices/ISPs and VPN usage if applicable)",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "interview-decision"
+      }
+    ],
+    "position": { "x": 800, "y": 1100 }
+  },
+  "interview-decision": {
+    "id": "interview-decision",
+    "instruction": "Depending on the conversation, the member may need to: Convert, update username/password, or activity code could be valid (if valid, unlock alkami)",
+    "options": [],
+    "position": { "x": 800, "y": 1250 }
+  },
+  "notes": {
+    "id": "notes",
+    "instruction": "Fraud notes that member needs to be interviewed: Locking OLM is often a tool the fraud dept uses to prompt a call from the member for them to be interviewed for a variety of reasons.",
+    "options": [
+      {
+        "label": "Notes from the Alerts team about BC activity, this note should include the BC Alert",
+        "nextNodeId": "bc-alert"
+      },
+      {
+        "label": "Note from Fraud that member needs to be interviewed about check/wire/transfer etc.",
+        "nextNodeId": "interview-fraud"
+      }
+    ],
+    "position": { "x": 900, "y": 350 }
+  },
+  "bc-alert": {
+    "id": "bc-alert",
+    "instruction": "Go to BioCatch and search the UID or CSID provided in the Notes from the Alerts team.",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "scamlytics-ip"
+      }
+    ],
+    "position": { "x": 850, "y": 500 }
+  },
+  "scamlytics-ip": {
+    "id": "scamlytics-ip",
+    "instruction": "Use Scamlytics to Search the IP",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "interview-activity"
+      }
+    ],
+    "position": { "x": 850, "y": 650 }
+  },
+  "interview-activity": {
+    "id": "interview-activity",
+    "instruction": "Interview the member about the Activity: Depending on the conversation, the member may need to: Convert, update username/password, or activity could be valid (if valid unlock Alkami and remove the restrictions as needed)",
+    "options": [],
+    "position": { "x": 850, "y": 800 }
+  },
+  "interview-fraud": {
+    "id": "interview-fraud",
+    "instruction": "Conduct an interview with the member regarding concerns",
+    "options": [
+      {
+        "label": "After Conversation with member, adjusting OLM to NO ACCESS",
+        "nextNodeId": "no-access"
+      },
+      {
+        "label": "After conversation with member, adjusting OLM to VIEW ONLY ACCESS",
+        "nextNodeId": "view-only"
+      },
+      {
+        "label": "After conversation with member, adjusting OLM to FULL ACCESS",
+        "nextNodeId": "full-access"
+      }
+    ],
+    "position": { "x": 950, "y": 500 }
+  },
+  "no-access": {
+    "id": "no-access",
+    "instruction": "In Symitar, check for warning codes 021 and 024 are present, if not, then run script RG MOBILE and select \"Freeze Mobile Account\"",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "disable-setup"
+      }
+    ],
+    "position": { "x": 900, "y": 650 }
+  },
+  "disable-setup": {
+    "id": "disable-setup",
+    "instruction": "Complete setup: Verify Pref 00 and Tracking 96 are \"FRAUDDISABLED\", go to Alkami and set profile status to Disabled, then disable ACH User Status. The member will have no OLM access.",
+    "options": [],
+    "position": { "x": 900, "y": 800 }
+  },
+  "view-only": {
+    "id": "view-only",
+    "instruction": "In Symitar, check for warning codes 021 and 024 are present, if present, then run script RG MOBILE and select \"Unlock Mobile Account\"",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "view-only-setup"
+      }
+    ],
+    "position": { "x": 1000, "y": 650 }
+  },
+  "view-only-setup": {
+    "id": "view-only-setup",
+    "instruction": "Complete setup: Set HB Mode Option 1 and HB Enable Code Option 0 in Pref 00, ensure username in Tracking 96 has no \"X\" but A2A, RDC, P2P have \"X\", set Alkami profile to Active with \"View Only Service\" package. Member will have view-only access.",
+    "options": [],
+    "position": { "x": 1000, "y": 800 }
+  },
+  "full-access": {
+    "id": "full-access",
+    "instruction": "In Symitar, check for warning codes 021 and 024 are present, if present, then run script RG MOBILE and select \"Unlock Mobile Account\"",
+    "options": [
+      {
+        "label": "Next",
+        "nextNodeId": "full-access-setup"
+      }
+    ],
+    "position": { "x": 1100, "y": 650 }
+  },
+  "full-access-setup": {
+    "id": "full-access-setup",
+    "instruction": "Complete setup: Set HB Mode Option 1 and HB Enable Code Option 2 in Pref 00, ensure username in Tracking 96 has no \"X\" and A2A, RDC, P2P have \"Y\", set Alkami profile to Active with \"Default Retail Package\" and enable ACH User Status. Member will have full OLM access.",
+    "options": [],
+    "position": { "x": 1100, "y": 800 }
+  },
+  "cdnc": {
+    "id": "cdnc",
+    "instruction": "Go to BioCatch and search the CSID (customer Session ID) from Alkami",
+    "options": [
+      {
+        "label": "No results",
+        "nextNodeId": "cdnc-whitelist"
+      },
+      {
+        "label": "Results",
+        "nextNodeId": "bc"
+      }
+    ],
+    "position": { "x": 300, "y": 500 }
+  },
+  "cdnc-whitelist": {
+    "id": "cdnc-whitelist",
+    "instruction": "Go to BioCatch Rule Manager and add the UID from the Alkami profile to the The MACU_UID_TransferCDNC_List White list",
+    "options": [],
+    "position": { "x": 400, "y": 650 }
+  }
+}
