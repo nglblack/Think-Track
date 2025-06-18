@@ -338,16 +338,28 @@ function renderFlowchart() {
    // Clear existing content
    content.innerHTML = '';
    
-   // Calculate required canvas size based on node positions
+   // Calculate required canvas size based on node positions with generous padding
    let maxX = 0, maxY = 0;
    Object.values(flowchart).forEach(node => {
        if (node.position) {
-           maxX = Math.max(maxX, node.position.x + 400); // 400px for node width + margin
-           maxY = Math.max(maxY, node.position.y + 200); // 200px for node height + margin
+           // Use actual node dimensions or reasonable defaults
+           const nodeWidth = node.customSize?.width || 350;
+           const nodeHeight = node.customSize?.height || 200;
+           maxX = Math.max(maxX, node.position.x + nodeWidth + 100); // Extra padding
+           maxY = Math.max(maxY, node.position.y + nodeHeight + 100); // Extra padding
        }
    });
-   const canvasWidth = Math.max(maxX, 1500);
-   const canvasHeight = Math.max(maxY, 1500);
+   
+   // Ensure minimum canvas size and add extra buffer
+   const canvasWidth = Math.max(maxX + 200, 1500); // Minimum 1500px width
+   const canvasHeight = Math.max(maxY + 200, 1000); // Minimum 1000px height
+
+   // Set explicit dimensions on the content container
+   content.style.position = 'relative';
+   content.style.width = `${canvasWidth}px`;
+   content.style.height = `${canvasHeight}px`;
+   content.style.minWidth = `${canvasWidth}px`;
+   content.style.minHeight = `${canvasHeight}px`;
 
    // Create SVG for connections
    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -363,8 +375,8 @@ function renderFlowchart() {
    // Create container for nodes
    const nodeContainer = document.createElement('div');
    nodeContainer.style.position = 'relative';
-   nodeContainer.style.width = '100%';
-   nodeContainer.style.height = '100%';
+   nodeContainer.style.width = `${canvasWidth}px`;
+   nodeContainer.style.height = `${canvasHeight}px`;
    nodeContainer.style.zIndex = '5';
    content.appendChild(nodeContainer);
    
@@ -675,6 +687,41 @@ function setupNodeDrag(nodeEl, node) {
        if (!node.position) node.position = {};
        node.position.x = newX;
        node.position.y = newY;
+       
+       // Dynamically expand canvas if needed
+       const content = document.getElementById('flowchart-content');
+       const nodeWidth = node.customSize?.width || 350;
+       const nodeHeight = node.customSize?.height || 200;
+       
+       const requiredWidth = newX + nodeWidth + 200;
+       const requiredHeight = newY + nodeHeight + 200;
+       
+       const currentWidth = parseInt(content.style.width) || 1500;
+       const currentHeight = parseInt(content.style.height) || 1000;
+       
+       if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
+           const newCanvasWidth = Math.max(requiredWidth, currentWidth);
+           const newCanvasHeight = Math.max(requiredHeight, currentHeight);
+           
+           content.style.width = `${newCanvasWidth}px`;
+           content.style.height = `${newCanvasHeight}px`;
+           content.style.minWidth = `${newCanvasWidth}px`;
+           content.style.minHeight = `${newCanvasHeight}px`;
+           
+           // Update SVG size
+           const svg = content.querySelector('svg');
+           if (svg) {
+               svg.style.width = `${newCanvasWidth}px`;
+               svg.style.height = `${newCanvasHeight}px`;
+           }
+           
+           // Update node container size
+           const nodeContainer = content.children[1];
+           if (nodeContainer) {
+               nodeContainer.style.width = `${newCanvasWidth}px`;
+               nodeContainer.style.height = `${newCanvasHeight}px`;
+           }
+       }
        
        // Re-render connections
        const svg = document.querySelector('#flowchart-content svg');

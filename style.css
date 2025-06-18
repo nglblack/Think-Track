@@ -991,3 +991,65 @@ textarea {
        font-size: 0.85rem;
    }
 }
+/* Enhanced Flowchart Canvas Styles */
+#flowchart-canvas {
+   flex: 1;
+   min-height: 0;
+   height: 100%;
+   background: #fafafa;
+   border-radius: 12px;
+   padding: 20px;
+   overflow: auto;
+   position: relative;
+   border: 2px dashed #e0e0e0;
+   transition: border-color 0.3s ease;
+}
+
+#flowchart-canvas:hover {
+   border-color: #667eea;
+}
+
+#flowchart-content {
+   position: relative;
+   min-width: 100%;
+   min-height: 100%;
+   /* Ensure content can expand beyond initial container */
+   width: max-content;
+   height: max-content;
+}
+
+/* Ensure flowchart nodes maintain their dimensions */
+.flowchart-node {
+   position: absolute;
+   background: white;
+   border: 2px solid #667eea;
+   border-radius: 12px;
+   padding: 12px;
+   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+   cursor: move;
+   user-select: none;
+   font-size: 0.85rem;
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   /* Prevent node from shrinking */
+   flex-shrink: 0;
+   /* Ensure minimum dimensions */
+   min-width: 160px;
+   min-height: 120px;
+   /* Default width for consistent sizing */
+   width: fit-content;
+   max-width: 350px;
+   /* Prevent text overflow issues */
+   overflow: visible;
+   /* Ensure proper box model */
+   box-sizing: border-box;
+}
+
+/* Prevent canvas from constraining nodes */
+#flowchart-canvas {
+   /* Allow horizontal and vertical scrolling */
+   overflow-x: auto;
+   overflow-y: auto;
+   /* Ensure smooth scrolling */
+   scroll-behavior: smooth;
+}
