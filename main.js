@@ -136,8 +136,8 @@ function addOption() {
    const optionDiv = document.createElement('div');
    optionDiv.className = 'option-item';
    optionDiv.innerHTML = `
-       <input type="text" placeholder="Option label (e.g., No)" required>
-       <input type="text" placeholder="Next node ID (e.g., end)" required>
+       <input type="text" placeholder="Option label (e.g., No)">
+       <input type="text" placeholder="Next node ID (e.g., end)">
        <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
    `;
    container.appendChild(optionDiv);
@@ -149,66 +149,6 @@ function removeOption(button) {
        button.parentElement.remove();
    }
 }
-
-document.getElementById('node-form').addEventListener('submit', function(e) {
-   e.preventDefault();
-   
-   const nodeId = document.getElementById('node-id').value.trim();
-   const instruction = document.getElementById('node-instruction').value.trim();
-   const optionItems = document.querySelectorAll('.option-item');
-   
-   const options = [];
-   optionItems.forEach(item => {
-       const inputs = item.querySelectorAll('input');
-       const label = inputs[0].value.trim();
-       const nextNodeId = inputs[1].value.trim();
-       
-       if (label && nextNodeId) {
-           options.push({ label, nextNodeId });
-       }
-   });
-   
-   if (options.length === 0) {
-       alert('Please add at least one option.');
-       return;
-   }
-   
-   // Check if we're editing and the ID changed, make sure new ID doesn't exist
-   if (editingNodeId && editingNodeId !== nodeId && flowchart[nodeId]) {
-       alert('A node with this ID already exists. Please choose a different ID.');
-       return;
-   }
-   
-   // If editing and ID changed, remove the old node
-   if (editingNodeId && editingNodeId !== nodeId) {
-       delete flowchart[editingNodeId];
-   }
-   
-   // Generate position for new nodes
-  let position = { x: 100, y: 100 };
-if (editingNodeId && flowchart[editingNodeId]) {
-   // Keep existing position if editing
-   position = flowchart[editingNodeId].position || position;
-} else {
-   // Generate new position for new nodes using hierarchical layout
-   position = generateNodePosition();
-}
-   
-   flowchart[nodeId] = {
-       id: nodeId,
-       instruction: instruction,
-       options: options,
-       image: currentImageData,
-       position: position
-   };
-   
-   updateFlowchartDisplay();
-   resetForm();
-   
-   // Show success message
-   const action = editingNodeId ? 'updated' : 'added';
-   alert(`Node "${nodeId}" ${action} successfully!`);
-});
 
 // Replace the entire generateNodePosition() function in main.js
 function generateNodePosition() {
@@ -869,71 +809,189 @@ function updateFlowchartDisplay() {
    renderFlowchart();
 }
 
+// Updated form submission handler
+document.getElementById('node-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    console.log('=== FORM SUBMISSION START ===');
+    
+    const nodeId = document.getElementById('node-id').value.trim();
+    const instruction = document.getElementById('node-instruction').value.trim();
+    
+    console.log('Node ID:', nodeId);
+    console.log('Instruction:', instruction);
+    
+    // Check for special end node IDs FIRST
+    const isEndNodeByID = nodeId.toLowerCase() === 'end' || 
+                         nodeId.toLowerCase() === 'exit' || 
+                         nodeId.toLowerCase() === 'finish' || 
+                         nodeId.toLowerCase() === 'complete';
+    
+    console.log('Is end node by ID:', isEndNodeByID);
+    
+    const optionItems = document.querySelectorAll('.option-item');
+    console.log('Found option items:', optionItems.length);
+    
+    let options = [];
+    let hasExitOption = false;
+    
+    // Process options only if not an end node by ID
+    if (!isEndNodeByID) {
+        console.log('Processing options (not an end node)...');
+        optionItems.forEach((item, index) => {
+            const inputs = item.querySelectorAll('input');
+            const label = inputs[0].value.trim();
+            const nextNodeId = inputs[1].value.trim();
+            
+            console.log(`Option ${index}: label="${label}", nextNodeId="${nextNodeId}"`);
+            
+            if (label && nextNodeId) {
+                if (label.toLowerCase() === 'exit' || nextNodeId.toLowerCase() === 'exit') {
+                    hasExitOption = true;
+                    console.log('Found exit option');
+                } else {
+                    options.push({ label, nextNodeId });
+                }
+            }
+        });
+    } else {
+        console.log('Skipping option processing - this is an end node by ID');
+    }
+    
+    console.log('Final options array:', options);
+    console.log('Has exit option:', hasExitOption);
+    
+    // Validation: Allow if it's an end node OR has valid options
+    const shouldPass = isEndNodeByID || hasExitOption || options.length > 0;
+    console.log('Should pass validation:', shouldPass);
+    
+    if (!isEndNodeByID && !hasExitOption && options.length === 0) {
+        console.log('VALIDATION FAILED');
+        alert('Please add at least one option, or:\n• Use "end", "exit", "finish", or "complete" as the node ID, or\n• Add an option with "exit" as the label or target to create an end node.');
+        return;
+    }
+    
+    console.log('VALIDATION PASSED - Creating node...');
+    
+    // Check if we're editing and the ID changed, make sure new ID doesn't exist
+    if (editingNodeId && editingNodeId !== nodeId && flowchart[nodeId]) {
+        alert('A node with this ID already exists. Please choose a different ID.');
+        return;
+    }
+    
+    // If editing and ID changed, remove the old node
+    if (editingNodeId && editingNodeId !== nodeId) {
+        delete flowchart[editingNodeId];
+    }
+    
+    // Generate position for new nodes
+    let position = { x: 100, y: 100 };
+    if (editingNodeId && flowchart[editingNodeId]) {
+        position = flowchart[editingNodeId].position || position;
+    } else {
+        position = generateNodePosition();
+    }
+    
+    flowchart[nodeId] = {
+        id: nodeId,
+        instruction: instruction,
+        options: options,
+        image: currentImageData,
+        position: position
+    };
+    
+    console.log('Created node:', flowchart[nodeId]);
+    
+    updateFlowchartDisplay();
+    resetForm();
+    
+    const action = editingNodeId ? 'updated' : 'added';
+    const isEndNode = (isEndNodeByID || hasExitOption) && options.length === 0;
+    const nodeType = isEndNode ? 'End' : 'Node';
+    alert(`${nodeType} "${nodeId}" ${action} successfully!`);
+    
+    console.log('=== FORM SUBMISSION COMPLETE ===');
+});
+
+// Updated resetForm function
 function resetForm() {
-   document.getElementById('node-form').reset();
-   editingNodeId = null;
-   currentImageData = null;
-   
-   // Hide image preview
-   document.getElementById('image-preview').classList.add('hidden');
-   
-   // Update UI to show "Add" mode
-   document.getElementById('submit-btn').textContent = 'Add Node';
-   document.getElementById('cancel-edit-btn').classList.add('hidden');
-   document.getElementById('node-id').disabled = false;
-   
-   // Reset to one option
-   const container = document.getElementById('options-container');
-   container.innerHTML = `
-       <div class="option-item">
-           <input type="text" placeholder="Option label (e.g., Yes)" required>
-           <input type="text" placeholder="Next node ID (e.g., verify-id)" required>
-           <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
-       </div>
-   `;
+    document.getElementById('node-form').reset();
+    editingNodeId = null;
+    currentImageData = null;
+    
+    // Hide image preview
+    document.getElementById('image-preview').classList.add('hidden');
+    
+    // Update UI to show "Add" mode
+    document.getElementById('submit-btn').textContent = 'Add Node';
+    document.getElementById('cancel-edit-btn').classList.add('hidden');
+    document.getElementById('node-id').disabled = false;
+    
+    // Reset to one option with NO required attributes
+const container = document.getElementById('options-container');
+container.innerHTML = `
+    <div class="option-item">
+        <input type="text" placeholder="Option label (e.g., Yes)">
+        <input type="text" placeholder="Next node ID (e.g., verify-id)">
+        <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+    </div>
+`;
 }
 
 function editNode(nodeId) {
-   const node = flowchart[nodeId];
-   if (!node) return;
-   
-   editingNodeId = nodeId;
-   
-   // Populate form with node data
-   document.getElementById('node-id').value = node.id;
-   document.getElementById('node-instruction').value = node.instruction;
-   
-   // Handle image data
-   currentImageData = node.image || null;
-   if (currentImageData) {
-       document.getElementById('preview-img').src = currentImageData;
-       document.getElementById('image-preview').classList.remove('hidden');
-   } else {
-       document.getElementById('image-preview').classList.add('hidden');
-   }
-   
-   // Clear and populate options
-   const container = document.getElementById('options-container');
-   container.innerHTML = '';
-   
-   node.options.forEach(option => {
-       const optionDiv = document.createElement('div');
-       optionDiv.className = 'option-item';
-       optionDiv.innerHTML = `
-           <input type="text" value="${option.label}" required>
-           <input type="text" value="${option.nextNodeId}" required>
-           <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
-       `;
-       container.appendChild(optionDiv);
-   });
-   
-   // Update UI to show "Edit" mode
-   document.getElementById('submit-btn').textContent = 'Update Node';
-   document.getElementById('cancel-edit-btn').classList.remove('hidden');
-   document.getElementById('node-id').disabled = true; // Prevent ID changes to avoid confusion
-   
-   // Scroll to form
-   document.getElementById('node-form').scrollIntoView({ behavior: 'smooth' });
+    const node = flowchart[nodeId];
+    if (!node) return;
+    
+    editingNodeId = nodeId;
+    
+    // Populate form with node data
+    document.getElementById('node-id').value = node.id;
+    document.getElementById('node-instruction').value = node.instruction;
+    
+    // Handle image data
+    currentImageData = node.image || null;
+    if (currentImageData) {
+        document.getElementById('preview-img').src = currentImageData;
+        document.getElementById('image-preview').classList.remove('hidden');
+    } else {
+        document.getElementById('image-preview').classList.add('hidden');
+    }
+    
+    // Clear and populate options
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+    
+    // If node has options, populate them
+    if (node.options && node.options.length > 0) {
+        node.options.forEach(option => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option-item';
+            optionDiv.innerHTML = `
+                <input type="text" value="${option.label}" required>
+                <input type="text" value="${option.nextNodeId}" required>
+                <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+            `;
+            container.appendChild(optionDiv);
+        });
+    } else {
+        // For end nodes with no options, add one empty option field
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'option-item';
+        optionDiv.innerHTML = `
+            <input type="text" placeholder="Option label (e.g., Yes)" required>
+            <input type="text" placeholder="Next node ID (e.g., verify-id)" required>
+            <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+        `;
+        container.appendChild(optionDiv);
+    }
+    
+    // Update UI to show "Edit" mode
+    document.getElementById('submit-btn').textContent = 'Update Node';
+    document.getElementById('cancel-edit-btn').classList.remove('hidden');
+    document.getElementById('node-id').disabled = true; // Prevent ID changes to avoid confusion
+    
+    // Scroll to form
+    document.getElementById('node-form').scrollIntoView({ behavior: 'smooth' });
 }
 
 function cancelEdit() {
