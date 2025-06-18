@@ -969,7 +969,41 @@ function deleteNode(nodeId) {
    }
 }
 
-// Enhanced export function with custom dialog - REPLACE the existing exportFlowchart() function
+// Browser detection utility
+function detectBrowser() {
+   const userAgent = navigator.userAgent;
+   const browserInfo = {
+       userAgent: userAgent,
+       isChrome: /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor),
+       isEdge: /Edg/.test(userAgent),
+       isFirefox: /Firefox/.test(userAgent),
+       isSafari: /Safari/.test(userAgent) && /Apple Computer/.test(navigator.vendor),
+       isOpera: /OPR/.test(userAgent),
+       isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent),
+       supportsFileSystemAccess: 'showSaveFilePicker' in window,
+       supportsDownloadAttribute: 'download' in document.createElement('a')
+   };
+   
+   // More specific detection
+   if (browserInfo.isChrome) {
+       const match = userAgent.match(/Chrome\/(\d+)/);
+       browserInfo.chromeVersion = match ? parseInt(match[1]) : null;
+   }
+   
+   if (browserInfo.isFirefox) {
+       const match = userAgent.match(/Firefox\/(\d+)/);
+       browserInfo.firefoxVersion = match ? parseInt(match[1]) : null;
+   }
+   
+   if (browserInfo.isSafari) {
+       const match = userAgent.match(/Version\/(\d+)/);
+       browserInfo.safariVersion = match ? parseInt(match[1]) : null;
+   }
+   
+   return browserInfo;
+}
+
+// Enhanced export function with browser-specific handling
 async function exportFlowchart() {
    if (Object.keys(flowchart).length === 0) {
        alert('No flowchart to export. Please create some nodes first.');
@@ -977,11 +1011,17 @@ async function exportFlowchart() {
    }
    
    const dataStr = JSON.stringify(flowchart, null, 2);
+   const browser = detectBrowser();
    
-   // Check if the File System Access API is supported
-   if ('showSaveFilePicker' in window) {
+   // Log browser info for debugging
+   console.log('Browser Detection:', browser);
+   console.log('File System Access API supported:', browser.supportsFileSystemAccess);
+   console.log('Download attribute supported:', browser.supportsDownloadAttribute);
+   
+   // Try File System Access API first (Chrome 86+, Edge 86+)
+   if (browser.supportsFileSystemAccess) {
+       console.log('Using File System Access API');
        try {
-           // Use the modern File System Access API
            const fileHandle = await window.showSaveFilePicker({
                suggestedName: 'flowchart.json',
                types: [
@@ -998,23 +1038,121 @@ async function exportFlowchart() {
            await writable.write(dataStr);
            await writable.close();
            
-           showExportSuccess();
+           showExportSuccess('File saved successfully using File System Access API!');
+           return;
            
        } catch (error) {
-           if (error.name !== 'AbortError') {
-               console.error('Error saving file:', error);
-               alert('Error saving file: ' + error.message);
+           if (error.name === 'AbortError') {
+               console.log('User cancelled save dialog');
+               return;
+           } else {
+               console.error('File System Access API error:', error);
+               // Fall back to custom dialog
            }
        }
+   }
+   
+   // Browser-specific fallback strategies
+   if (browser.isSafari) {
+       console.log('Using Safari-specific export method');
+       exportForSafari(dataStr);
+   } else if (browser.isFirefox) {
+       console.log('Using Firefox-specific export method');
+       exportForFirefox(dataStr);
+   } else if (browser.isMobile) {
+       console.log('Using mobile-specific export method');
+       exportForMobile(dataStr);
    } else {
-       // Use custom modal dialog for better UX
+       console.log('Using default custom dialog');
        showCustomSaveDialog(dataStr);
    }
 }
 
-// Custom save dialog for browsers without File System Access API
-function showCustomSaveDialog(dataStr) {
-   // Create modal overlay
+// Safari-specific export (Safari has issues with download attribute sometimes)
+function exportForSafari(dataStr) {
+   // First try the standard method
+   if (navigator.userAgent.includes('Version/')) {
+       const version = parseInt(navigator.userAgent.match(/Version\/(\d+)/)[1]);
+       if (version >= 14) {
+           // Modern Safari should work with standard method
+           showCustomSaveDialog(dataStr);
+           return;
+       }
+   }
+   
+   // Fallback for older Safari
+   try {
+       const blob = new Blob([dataStr], { type: 'application/json' });
+       const url = URL.createObjectURL(blob);
+       
+       // Open in new tab for Safari
+       const newWindow = window.open(url, '_blank');
+       if (newWindow) {
+           newWindow.document.title = 'flowchart.json - Right-click and Save As...';
+           setTimeout(() => URL.revokeObjectURL(url), 10000);
+           alert('File opened in new tab. Right-click and choose "Save As..." to download.');
+       } else {
+           // Popup blocked, use alternative
+           showTextAreaExport(dataStr);
+       }
+   } catch (error) {
+       console.error('Safari export error:', error);
+       showTextAreaExport(dataStr);
+   }
+}
+
+// Firefox-specific export
+function exportForFirefox(dataStr) {
+   // Firefox should work with custom dialog, but let's add extra debugging
+   console.log('Firefox version:', navigator.userAgent.match(/Firefox\/(\d+)/)?.[1]);
+   
+   try {
+       showCustomSaveDialog(dataStr);
+   } catch (error) {
+       console.error('Firefox export error:', error);
+       // Fallback to direct download
+       downloadFileDirectly(dataStr, 'flowchart.json');
+   }
+}
+
+// Mobile-specific export
+function exportForMobile(dataStr) {
+   console.log('Mobile device detected');
+   
+   // On mobile, show the content in a textarea for copy/paste
+   showTextAreaExport(dataStr);
+}
+
+// Direct download method
+function downloadFileDirectly(dataStr, filename) {
+   console.log('Using direct download method');
+   
+   try {
+       const blob = new Blob([dataStr], { type: 'application/json' });
+       const url = URL.createObjectURL(blob);
+       
+       const link = document.createElement('a');
+       link.href = url;
+       link.download = filename;
+       link.style.display = 'none';
+       
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+       
+       URL.revokeObjectURL(url);
+       showExportSuccess('File downloaded successfully!');
+       
+   } catch (error) {
+       console.error('Direct download error:', error);
+       showTextAreaExport(dataStr);
+   }
+}
+
+// Textarea export for problematic browsers
+function showTextAreaExport(dataStr) {
+   console.log('Using textarea export method');
+   
    const overlay = document.createElement('div');
    overlay.style.cssText = `
        position: fixed;
@@ -1030,7 +1168,123 @@ function showCustomSaveDialog(dataStr) {
        backdrop-filter: blur(5px);
    `;
    
-   // Create modal dialog
+   const modal = document.createElement('div');
+   modal.style.cssText = `
+       background: white;
+       padding: 30px;
+       border-radius: 15px;
+       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+       max-width: 600px;
+       width: 90%;
+       max-height: 80vh;
+       overflow-y: auto;
+   `;
+   
+   modal.innerHTML = `
+       <h3 style="margin: 0 0 20px 0; color: #333; font-size: 1.3rem;">📄 Export Flowchart</h3>
+       <p style="margin: 0 0 15px 0; color: #666; line-height: 1.4;">
+           Copy the content below and save it as a .json file:
+       </p>
+       <textarea 
+           id="export-textarea"
+           readonly
+           style="
+               width: 100%;
+               height: 300px;
+               padding: 12px;
+               border: 2px solid #e0e0e0;
+               border-radius: 8px;
+               font-family: monospace;
+               font-size: 0.9rem;
+               resize: vertical;
+               box-sizing: border-box;
+           "
+       >${dataStr}</textarea>
+       <div style="margin-top: 15px; display: flex; gap: 12px; justify-content: center;">
+           <button 
+               id="copy-btn"
+               style="
+                   padding: 12px 24px;
+                   background: #3498db;
+                   color: white;
+                   border: none;
+                   border-radius: 8px;
+                   font-size: 1rem;
+                   font-weight: 600;
+                   cursor: pointer;
+               "
+           >
+               📋 Copy to Clipboard
+           </button>
+           <button 
+               id="close-btn"
+               style="
+                   padding: 12px 24px;
+                   background: #95a5a6;
+                   color: white;
+                   border: none;
+                   border-radius: 8px;
+                   font-size: 1rem;
+                   font-weight: 600;
+                   cursor: pointer;
+               "
+           >
+               Close
+           </button>
+       </div>
+   `;
+   
+   overlay.appendChild(modal);
+   document.body.appendChild(overlay);
+   
+   // Auto-select the textarea content
+   const textarea = document.getElementById('export-textarea');
+   textarea.select();
+   
+   // Copy functionality
+   document.getElementById('copy-btn').addEventListener('click', async () => {
+       try {
+           await navigator.clipboard.writeText(dataStr);
+           showExportSuccess('Content copied to clipboard!');
+       } catch (error) {
+           console.log('Clipboard API failed, using fallback');
+           textarea.select();
+           document.execCommand('copy');
+           showExportSuccess('Content copied to clipboard!');
+       }
+   });
+   
+   // Close functionality
+   document.getElementById('close-btn').addEventListener('click', () => {
+       document.body.removeChild(overlay);
+   });
+   
+   overlay.addEventListener('click', (e) => {
+       if (e.target === overlay) {
+           document.body.removeChild(overlay);
+       }
+   });
+}
+
+// Original custom save dialog (keep this as is, but add debugging)
+function showCustomSaveDialog(dataStr) {
+   console.log('Showing custom save dialog');
+   
+   const overlay = document.createElement('div');
+   overlay.style.cssText = `
+       position: fixed;
+       top: 0;
+       left: 0;
+       width: 100%;
+       height: 100%;
+       background: rgba(0, 0, 0, 0.5);
+       display: flex;
+       align-items: center;
+       justify-content: center;
+       z-index: 10000;
+       backdrop-filter: blur(5px);
+   `;
+   
    const modal = document.createElement('div');
    modal.style.cssText = `
        background: white;
@@ -1076,7 +1330,6 @@ function showCustomSaveDialog(dataStr) {
                    font-size: 1rem;
                    font-weight: 600;
                    cursor: pointer;
-                   transition: all 0.3s ease;
                "
            >
                Cancel
@@ -1092,7 +1345,6 @@ function showCustomSaveDialog(dataStr) {
                    font-size: 1rem;
                    font-weight: 600;
                    cursor: pointer;
-                   transition: all 0.3s ease;
                "
            >
                💾 Export
@@ -1103,24 +1355,19 @@ function showCustomSaveDialog(dataStr) {
    overlay.appendChild(modal);
    document.body.appendChild(overlay);
    
-   // Focus the input field and select the filename part
    const filenameInput = document.getElementById('export-filename');
    filenameInput.focus();
    filenameInput.setSelectionRange(0, filenameInput.value.lastIndexOf('.'));
    
-   // Handle cancel
-   const cancelBtn = document.getElementById('export-cancel-btn');
    const closeModal = () => {
        document.body.removeChild(overlay);
    };
    
-   cancelBtn.addEventListener('click', closeModal);
+   document.getElementById('export-cancel-btn').addEventListener('click', closeModal);
    overlay.addEventListener('click', (e) => {
        if (e.target === overlay) closeModal();
    });
    
-   // Handle save
-   const saveBtn = document.getElementById('export-save-btn');
    const performSave = () => {
        let filename = filenameInput.value.trim();
        
@@ -1133,29 +1380,39 @@ function showCustomSaveDialog(dataStr) {
            return;
        }
        
-       // Ensure .json extension
        if (!filename.endsWith('.json')) {
            filename += '.json';
        }
        
-       // Download the file
-       const dataBlob = new Blob([dataStr], {type: 'application/json'});
-       const url = URL.createObjectURL(dataBlob);
+       console.log('Attempting download with filename:', filename);
        
-       const link = document.createElement('a');
-       link.href = url;
-       link.download = filename;
-       link.click();
-       
-       URL.revokeObjectURL(url);
-       
-       closeModal();
-       showExportSuccess();
+       try {
+           const dataBlob = new Blob([dataStr], {type: 'application/json'});
+           const url = URL.createObjectURL(dataBlob);
+           
+           const link = document.createElement('a');
+           link.href = url;
+           link.download = filename;
+           link.style.display = 'none';
+           
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+           
+           URL.revokeObjectURL(url);
+           
+           closeModal();
+           showExportSuccess('File downloaded successfully!');
+           
+       } catch (error) {
+           console.error('Download error:', error);
+           closeModal();
+           showTextAreaExport(dataStr);
+       }
    };
    
-   saveBtn.addEventListener('click', performSave);
+   document.getElementById('export-save-btn').addEventListener('click', performSave);
    
-   // Handle Enter key
    filenameInput.addEventListener('keydown', (e) => {
        if (e.key === 'Enter') {
            performSave();
@@ -1163,20 +1420,12 @@ function showCustomSaveDialog(dataStr) {
            closeModal();
        }
    });
-   
-   // Handle Escape key globally
-   const handleEscape = (e) => {
-       if (e.key === 'Escape') {
-           closeModal();
-           document.removeEventListener('keydown', handleEscape);
-       }
-   };
-   document.addEventListener('keydown', handleEscape);
 }
 
-// Success notification
-function showExportSuccess() {
-   // Create success notification
+// Enhanced success notification
+function showExportSuccess(message = 'Flowchart exported successfully!') {
+   console.log('Export success:', message);
+   
    const notification = document.createElement('div');
    notification.style.cssText = `
        position: fixed;
@@ -1195,11 +1444,10 @@ function showExportSuccess() {
    notification.innerHTML = `
        <div style="display: flex; align-items: center; gap: 8px;">
            <span>✅</span>
-           <span>Flowchart exported successfully!</span>
+           <span>${message}</span>
        </div>
    `;
    
-   // Add animation keyframes
    if (!document.getElementById('export-animations')) {
        const style = document.createElement('style');
        style.id = 'export-animations';
@@ -1218,7 +1466,6 @@ function showExportSuccess() {
    
    document.body.appendChild(notification);
    
-   // Auto-remove after 3 seconds
    setTimeout(() => {
        notification.style.animation = 'slideOutRight 0.3s ease';
        setTimeout(() => {
