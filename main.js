@@ -68,28 +68,29 @@ const exampleFlowcharts = {
 };
 
 function switchMode(mode) {
-   document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-   event.target.classList.add('active');
-   
-   if (mode === 'create') {
-       document.getElementById('create-mode').classList.remove('hidden');
-       document.getElementById('navigate-mode').classList.add('hidden');
-   } else {
-       document.getElementById('create-mode').classList.add('hidden');
-       document.getElementById('navigate-mode').classList.remove('hidden');
-       
-       // Reset to proper starting node when switching to navigate mode
-       if (Object.keys(flowchart).length > 0) {
-           if (flowchart['start']) {
-               currentNodeId = 'start';
-           } else {
-               currentNodeId = Object.keys(flowchart)[0];
-           }
-           navigationHistory = [];
-       }
-       
-       loadNavigationView();
-   }
+    // Update tab states
+    document.querySelectorAll('.mode-tab').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    if (mode === 'create') {
+        document.getElementById('create-mode').classList.remove('hidden');
+        document.getElementById('navigate-mode').classList.add('hidden');
+    } else {
+        document.getElementById('create-mode').classList.add('hidden');
+        document.getElementById('navigate-mode').classList.remove('hidden');
+        
+        // Reset to proper starting node when switching to navigate mode
+        if (Object.keys(flowchart).length > 0) {
+            if (flowchart['start']) {
+                currentNodeId = 'start';
+            } else {
+                currentNodeId = Object.keys(flowchart)[0];
+            }
+            navigationHistory = [];
+        }
+        
+        loadNavigationView();
+    }
 }
 
 function toggleExampleDropdown() {

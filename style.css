@@ -705,14 +705,14 @@ textarea {
 .search-container {
    margin-bottom: 20px;
    background: #f8f9fa;
-   border-radius: 12px;
-   padding: 15px;
+   border-radius: 8px;
+   padding: 8px 15px;
    border-left: 4px solid #3498db;
 }
 
 .search-input-wrapper {
    position: relative;
-   margin-bottom: 10px;
+   margin-bottom: 0;
    max-width: 400px;
    margin-left: auto;
    margin-right: auto;
@@ -720,9 +720,9 @@ textarea {
 
 .search-input-wrapper input {
    width: 100%;
-   padding: 12px 40px 12px 16px;
+   padding: 10px 40px 10px 16px;
    border: 2px solid #e0e0e0;
-   border-radius: 8px;
+   border-radius: 6px;
    font-size: 0.9rem;
    transition: border-color 0.3s ease;
 }
@@ -1114,4 +1114,94 @@ textarea {
    overflow-y: auto;
    /* Ensure smooth scrolling */
    scroll-behavior: smooth;
+}
+/* New sidebar header styles */
+.sidebar-header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 15px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    color: #333;
+}
+
+.sidebar-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    text-shadow: none;
+}
+
+.sidebar-header p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+/* Mode tabs styles */
+.mode-tabs {
+    display: flex;
+    gap: 8px;
+    background: #f8f9fa;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.mode-tab {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: transparent;
+    color: #666;
+}
+
+.mode-tab.active {
+    background: #4CAF50;
+    color: white;
+    transform: none;
+    box-shadow: 0 2px 6px rgba(76,175,80,0.3);
+}
+
+.mode-tab:hover:not(.active) {
+    background: #e9ecef;
+    color: #333;
+}
+
+/* Update flowchart header to use flexbox properly */
+.flowchart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.flowchart-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.flowchart-stats {
+    font-size: 0.85rem;
+    color: #666;
+    background: #f8f9fa;
+    padding: 6px 12px;
+    border-radius: 15px;
+}
+
+/* Remove old header and mode selector styles */
+.header {
+    display: none;
+}
+
+.mode-selector {
+    display: none;
 }

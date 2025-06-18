@@ -8,21 +8,16 @@
 </head>
 <body>
    <div class="container">
-       <div class="header">
-           <h1>📋 Think Track</h1>
-           <p>Create and navigate interactive flowcharts</p>
-       </div>
-
-       <div class="mode-selector">
-           <button class="mode-btn active" onclick="switchMode('create')">✏️ Create</button>
-           <button class="mode-btn" onclick="switchMode('navigate')">🔁 Navigate</button>
-       </div>
-
        <!-- Create Mode -->
        <div id="create-mode">
            <div class="main-layout">
-               <!-- Left Sidebar - Form -->
+               <!-- Left Sidebar - Form with header -->
                <div class="sidebar">
+                   <div class="sidebar-header">
+                       <h1>📋 Think Track</h1>
+                       <p>Create and navigate interactive flowcharts</p>
+                   </div>
+                   
                    <div class="panel form-panel">
                        <h2>📝 Add New Node</h2>
                        <form id="node-form">
@@ -51,12 +46,12 @@
                            <div class="form-group">
                                <label>Options:</label>
                                <div class="options-container" id="options-container">
-                                <div class="option-item">
-                                    <input type="text" placeholder="Option label (e.g., Yes)">
-                                    <input type="text" placeholder="Next node ID (e.g., verify-id)">
-                                    <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
-                                </div>
-                            </div>
+                                   <div class="option-item">
+                                       <input type="text" placeholder="Option label (e.g., Yes)">
+                                       <input type="text" placeholder="Next node ID (e.g., verify-id)">
+                                       <button type="button" class="remove-option" onclick="removeOption(this)">×</button>
+                                   </div>
+                               </div>
                                <button type="button" class="btn btn-secondary" onclick="addOption()">+ Add Option</button>
                            </div>
                            
@@ -72,6 +67,12 @@
                        <div class="flowchart-header">
                            <div class="flowchart-title">📊 Current Flowchart</div>
                            <div class="flowchart-stats" id="flowchart-stats">0 nodes</div>
+                           
+                           <!-- Mode tabs -->
+                           <div class="mode-tabs">
+                               <button class="mode-tab active" onclick="switchMode('create')">✏️ Create</button>
+                               <button class="mode-tab" onclick="switchMode('navigate')">🔁 Navigate</button>
+                           </div>
                        </div>
                        
                        <!-- Search Bar -->
@@ -118,14 +119,25 @@
            </div>
        </div>
 
-       <!-- Navigate Mode -->
-       <div id="navigate-mode" class="hidden">
-           <div class="panel">
-               <div id="navigation-content">
-                   <p style="text-align: center; color: #666;">No flowchart loaded. Please create nodes or import a flowchart.</p>
-               </div>
-           </div>
-       </div>
+       <<!-- Navigate Mode -->
+<div id="navigate-mode" class="hidden">
+    <div class="panel">
+        <div class="flowchart-header">
+            <div class="flowchart-title">🔁 Navigate Flowchart</div>
+            <div></div> <!-- Empty spacer -->
+            
+            <!-- Mode tabs -->
+            <div class="mode-tabs">
+                <button class="mode-tab" onclick="switchMode('create')">✏️ Create</button>
+                <button class="mode-tab active" onclick="switchMode('navigate')">🔁 Navigate</button>
+            </div>
+        </div>
+        
+        <div id="navigation-content">
+            <p style="text-align: center; color: #666;">No flowchart loaded. Please create nodes or import a flowchart.</p>
+        </div>
+    </div>
+</div>
    </div>
    <script src="main.js"></script>
    
