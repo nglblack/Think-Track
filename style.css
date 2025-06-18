@@ -92,7 +92,7 @@ body {
    min-width: 0;
 }
 
-/* Flowchart Canvas */
+/* Enhanced Flowchart Canvas Styles with Zoom Support */
 #flowchart-canvas {
    flex: 1;
    min-height: 0;
@@ -104,10 +104,220 @@ body {
    position: relative;
    border: 2px dashed #e0e0e0;
    transition: border-color 0.3s ease;
+   /* Prevent default browser zoom behaviors */
+   touch-action: pan-x pan-y;
 }
 
 #flowchart-canvas:hover {
    border-color: #667eea;
+}
+
+#flowchart-content {
+   position: relative;
+   min-width: 100%;
+   min-height: 100%;
+   /* Ensure content can expand beyond initial container */
+   width: max-content;
+   height: max-content;
+   /* Transform origin for zooming */
+   transform-origin: 0 0;
+   /* Smooth zoom transitions */
+   transition: transform 0.3s ease;
+}
+
+/* Zoom controls positioned in top-right of canvas */
+.canvas-zoom-controls {
+   position: absolute;
+   top: 15px;
+   right: 15px;
+   z-index: 1001;
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+   background: rgba(255, 255, 255, 0.95);
+   padding: 8px;
+   border-radius: 8px;
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+   backdrop-filter: blur(5px);
+}
+
+.zoom-btn {
+   width: 36px;
+   height: 36px;
+   border: none;
+   border-radius: 6px;
+   background: #667eea;
+   color: white;
+   font-size: 1.2rem;
+   font-weight: bold;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   margin: 0;
+   padding: 0;
+}
+
+.zoom-btn:hover {
+   background: #5a6fd8;
+   transform: scale(1.1);
+}
+
+.zoom-btn:active {
+   transform: scale(0.95);
+}
+
+.zoom-btn:disabled {
+   background: #bdc3c7;
+   cursor: not-allowed;
+   transform: none;
+}
+
+.zoom-level-display {
+   font-size: 0.7rem;
+   color: #666;
+   text-align: center;
+   font-weight: 600;
+   margin: 4px 0;
+   user-select: none;
+}
+
+/* Enhanced canvas controls with better positioning */
+.canvas-controls {
+   position: absolute;
+   top: 15px;
+   left: 15px;
+   z-index: 1000;
+   display: flex;
+   gap: 8px;
+   background: rgba(255, 255, 255, 0.95);
+   padding: 8px;
+   border-radius: 8px;
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+   backdrop-filter: blur(5px);
+}
+
+.canvas-controls .btn {
+   padding: 8px 12px;
+   font-size: 0.8rem;
+   margin: 0;
+   white-space: nowrap;
+}
+
+/* Ensure flowchart nodes maintain their dimensions during zoom */
+.flowchart-node {
+   position: absolute;
+   background: white;
+   border: 2px solid #667eea;
+   border-radius: 12px;
+   padding: 12px;
+   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+   cursor: move;
+   user-select: none;
+   font-size: 0.85rem;
+   word-wrap: break-word;
+   overflow-wrap: break-word;
+   /* Prevent node from shrinking */
+   flex-shrink: 0;
+   /* Ensure minimum dimensions */
+   min-width: 160px;
+   min-height: 120px;
+   /* Default width for consistent sizing */
+   width: fit-content;
+   max-width: 350px;
+   /* Prevent text overflow issues */
+   overflow: visible;
+   /* Ensure proper box model */
+   box-sizing: border-box;
+}
+
+/* Prevent canvas from constraining nodes */
+#flowchart-canvas {
+   /* Allow horizontal and vertical scrolling */
+   overflow-x: auto;
+   overflow-y: auto;
+   /* Ensure smooth scrolling */
+   scroll-behavior: smooth;
+}
+
+/* Mini-map styles (optional enhancement) */
+.canvas-minimap {
+   position: absolute;
+   bottom: 15px;
+   right: 15px;
+   width: 200px;
+   height: 150px;
+   background: rgba(255, 255, 255, 0.9);
+   border: 2px solid #e0e0e0;
+   border-radius: 8px;
+   z-index: 999;
+   display: none; /* Hidden by default, can be toggled */
+   overflow: hidden;
+}
+
+.minimap-content {
+   width: 100%;
+   height: 100%;
+   transform-origin: 0 0;
+   position: relative;
+}
+
+.minimap-viewport {
+   position: absolute;
+   border: 2px solid #667eea;
+   background: rgba(102, 126, 234, 0.1);
+   cursor: move;
+}
+
+.minimap-toggle {
+   position: absolute;
+   bottom: 15px;
+   left: 15px;
+   z-index: 1000;
+   background: rgba(255, 255, 255, 0.95);
+   border: none;
+   border-radius: 6px;
+   padding: 8px 12px;
+   font-size: 0.8rem;
+   cursor: pointer;
+   color: #667eea;
+   font-weight: 600;
+   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+   transition: all 0.3s ease;
+}
+
+.minimap-toggle:hover {
+   background: #667eea;
+   color: white;
+   transform: translateY(-1px);
+}
+
+/* Responsive adjustments for zoom controls */
+@media (max-width: 768px) {
+   .canvas-zoom-controls {
+       top: 10px;
+       right: 10px;
+       padding: 6px;
+   }
+   
+   .zoom-btn {
+       width: 32px;
+       height: 32px;
+       font-size: 1rem;
+   }
+   
+   .canvas-controls {
+       top: 10px;
+       left: 10px;
+       padding: 6px;
+       gap: 6px;
+   }
+   
+   .canvas-controls .btn {
+       padding: 6px 10px;
+       font-size: 0.75rem;
+   }
 }
 
 .panel {

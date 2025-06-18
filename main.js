@@ -687,6 +687,7 @@ function renderConnections(svg) {
            const targetNode = flowchart[option.nextNodeId];
            if (!targetNode) return;
            
+           // Use the actual node position data instead of DOM-calculated positions
            const sourcePos = getNodeConnectionPoint(node, 'output', index, node.options.length);
            const targetPos = getNodeConnectionPoint(targetNode, 'input');
            
@@ -714,13 +715,19 @@ function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
            const optionsContainer = nodeEl.children[2]; // Header, instruction, then options
            if (optionsContainer && optionsContainer.children[optionIndex]) {
                const optionEl = optionsContainer.children[optionIndex];
-               const optionRect = optionEl.getBoundingClientRect();
-               const nodeRect = nodeEl.getBoundingClientRect();
-               const canvasRect = document.getElementById('flowchart-content').getBoundingClientRect();
                
-               // Calculate relative position within the canvas
-               const relativeX = optionRect.left - canvasRect.left + optionRect.width;
-               const relativeY = optionRect.top - canvasRect.top + optionRect.height / 2;
+               // Get the canvas and content elements
+               const canvas = document.getElementById('flowchart-canvas');
+               const content = document.getElementById('flowchart-content');
+               
+               // Get bounding rectangles
+               const optionRect = optionEl.getBoundingClientRect();
+               const canvasRect = canvas.getBoundingClientRect();
+               
+               // Account for zoom and pan by using the actual node position data
+               // instead of trying to calculate from transformed DOM positions
+               const relativeX = nodePos.x + nodeWidth;
+               const relativeY = nodePos.y + (optionRect.height / 2) + (optionIndex * (optionRect.height + 2)) + 40; // Approximate option offset
                
                return {
                    x: relativeX,
@@ -1829,76 +1836,88 @@ function autoLayoutNodes() {
 
 // Canvas zoom and pan functionality
 function setupCanvasControls() {
-   const canvas = document.getElementById('flowchart-canvas');
-   
-   // Add control buttons to canvas
-   const controls = document.createElement('div');
-   controls.style.position = 'absolute';
-   controls.style.top = '10px';
-   controls.style.right = '10px';
-   controls.style.zIndex = '1000';
-   controls.style.display = 'flex';
-   controls.style.gap = '8px';
-   
-   const autoLayoutBtn = document.createElement('button');
-   autoLayoutBtn.className = 'btn btn-secondary';
-   autoLayoutBtn.style.padding = '8px 12px';
-   autoLayoutBtn.style.fontSize = '0.8rem';
-   autoLayoutBtn.style.margin = '0';
-   autoLayoutBtn.textContent = '📐 Auto Layout';
-   autoLayoutBtn.onclick = autoLayoutNodes;
-   
-   const fitBtn = document.createElement('button');
-   fitBtn.className = 'btn btn-secondary';
-   fitBtn.style.padding = '8px 12px';
-   fitBtn.style.fontSize = '0.8rem';
-   fitBtn.style.margin = '0';
-   fitBtn.textContent = '🔍 Fit to View';
-   fitBtn.onclick = fitToView;
-   
-   controls.appendChild(autoLayoutBtn);
-   controls.appendChild(fitBtn);
-   canvas.appendChild(controls);
+    const canvas = document.getElementById('flowchart-canvas');
+    
+    // Add main control buttons (existing functionality)
+    const controls = document.createElement('div');
+    controls.className = 'canvas-controls';
+    
+    const autoLayoutBtn = document.createElement('button');
+    autoLayoutBtn.className = 'btn btn-secondary';
+    autoLayoutBtn.textContent = '📐 Auto Layout';
+    autoLayoutBtn.onclick = autoLayoutNodes;
+    
+    const fitBtn = document.createElement('button');
+    fitBtn.className = 'btn btn-secondary';
+    fitBtn.textContent = '🔍 Fit to View';
+    fitBtn.onclick = fitToView;
+    
+    const resetZoomBtn = document.createElement('button');
+    resetZoomBtn.className = 'btn btn-secondary';
+    resetZoomBtn.textContent = '🎯 Reset Zoom';
+    resetZoomBtn.onclick = resetCanvasZoom;
+    
+    controls.appendChild(autoLayoutBtn);
+    controls.appendChild(fitBtn);
+    controls.appendChild(resetZoomBtn);
+    canvas.appendChild(controls);
+    
+    // Add zoom controls
+    setupZoomControls(canvas);
+    
+    // Add zoom event listeners
+    setupZoomEventListeners(canvas);
 }
 
 function fitToView() {
-   const canvas = document.getElementById('flowchart-canvas');
-   const nodes = Object.values(flowchart);
-   
-   if (nodes.length === 0) return;
-   
-   // Calculate bounding box of all nodes
-   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-   
-   nodes.forEach(node => {
-       if (node.position) {
-           minX = Math.min(minX, node.position.x);
-           minY = Math.min(minY, node.position.y);
-           maxX = Math.max(maxX, node.position.x + 180); // Node width
-           maxY = Math.max(maxY, node.position.y + 120); // Node height
-       }
-   });
-   
-   // Add padding
-   const padding = 50;
-   minX -= padding;
-   minY -= padding;
-   maxX += padding;
-   maxY += padding;
-   
-   // Center the view on the bounding box
-   const centerX = (minX + maxX) / 2;
-   const centerY = (minY + maxY) / 2;
-   
-   const canvasRect = canvas.getBoundingClientRect();
-   const scrollLeft = centerX - canvasRect.width / 2;
-   const scrollTop = centerY - canvasRect.height / 2;
-   
-   canvas.scrollTo({
-       left: Math.max(0, scrollLeft),
-       top: Math.max(0, scrollTop),
-       behavior: 'smooth'
-   });
+    const canvas = document.getElementById('flowchart-canvas');
+    const nodes = Object.values(flowchart);
+    
+    if (nodes.length === 0) {
+        resetCanvasZoom();
+        return;
+    }
+    
+    // Calculate bounding box of all nodes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    nodes.forEach(node => {
+        if (node.position) {
+            const nodeWidth = node.customSize?.width || 350;
+            const nodeHeight = node.customSize?.height || 200;
+            minX = Math.min(minX, node.position.x);
+            minY = Math.min(minY, node.position.y);
+            maxX = Math.max(maxX, node.position.x + nodeWidth);
+            maxY = Math.max(maxY, node.position.y + nodeHeight);
+        }
+    });
+    
+    // Add padding
+    const padding = 50;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+    
+    // Calculate required scale to fit content
+    const canvasRect = canvas.getBoundingClientRect();
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    const scaleX = (canvasRect.width - 40) / contentWidth; // Account for canvas padding
+    const scaleY = (canvasRect.height - 40) / contentHeight;
+    const scale = Math.min(scaleX, scaleY, canvasZoom.maxScale);
+    
+    // Center the content
+    const scaledWidth = contentWidth * scale;
+    const scaledHeight = contentHeight * scale;
+    
+    canvasZoom.scale = Math.max(canvasZoom.minScale, scale);
+    canvasZoom.panX = (canvasRect.width - scaledWidth) / 2 - minX * scale;
+    canvasZoom.panY = (canvasRect.height - scaledHeight) / 2 - minY * scale;
+    
+    applyCanvasTransform();
+    updateZoomDisplay();
 }
 
 // Function to convert URLs in text to clickable links
@@ -1935,4 +1954,491 @@ if (document.readyState === 'loading') {
 } else {
    setupSearchEventListeners();
    setupCanvasControls();
+}
+// Enhanced Canvas Zoom and Pan Functionality
+let canvasZoom = {
+    scale: 1.0,
+    minScale: 0.1,
+    maxScale: 3.0,
+    step: 0.1,
+    panX: 0,
+    panY: 0,
+    isPanning: false,
+    startPan: { x: 0, y: 0 },
+    startOffset: { x: 0, y: 0 }
+};
+
+// Enhanced setupCanvasControls with zoom functionality
+function setupCanvasControls() {
+    const canvas = document.getElementById('flowchart-canvas');
+    
+    // Add main control buttons (existing functionality)
+    const controls = document.createElement('div');
+    controls.className = 'canvas-controls';
+    
+    const autoLayoutBtn = document.createElement('button');
+    autoLayoutBtn.className = 'btn btn-secondary';
+    autoLayoutBtn.textContent = '📐 Auto Layout';
+    autoLayoutBtn.onclick = autoLayoutNodes;
+    
+    const fitBtn = document.createElement('button');
+    fitBtn.className = 'btn btn-secondary';
+    fitBtn.textContent = '🔍 Fit to View';
+    fitBtn.onclick = fitToView;
+    
+    const resetZoomBtn = document.createElement('button');
+    resetZoomBtn.className = 'btn btn-secondary';
+    resetZoomBtn.textContent = '🎯 Reset Zoom';
+    resetZoomBtn.onclick = resetCanvasZoom;
+    
+    controls.appendChild(autoLayoutBtn);
+    controls.appendChild(fitBtn);
+    controls.appendChild(resetZoomBtn);
+    canvas.appendChild(controls);
+    
+    // Add zoom controls
+    setupZoomControls(canvas);
+    
+    // Add zoom event listeners
+    setupZoomEventListeners(canvas);
+}
+
+function setupZoomControls(canvas) {
+    // Create zoom controls container
+    const zoomControls = document.createElement('div');
+    zoomControls.className = 'canvas-zoom-controls';
+    
+    // Zoom in button
+    const zoomInBtn = document.createElement('button');
+    zoomInBtn.className = 'zoom-btn';
+    zoomInBtn.textContent = '+';
+    zoomInBtn.title = 'Zoom In';
+    zoomInBtn.onclick = () => zoomCanvas(canvasZoom.step);
+    
+    // Zoom level display
+    const zoomDisplay = document.createElement('div');
+    zoomDisplay.className = 'zoom-level-display';
+    zoomDisplay.id = 'zoom-level-display';
+    zoomDisplay.textContent = '100%';
+    
+    // Zoom out button
+    const zoomOutBtn = document.createElement('button');
+    zoomOutBtn.className = 'zoom-btn';
+    zoomOutBtn.textContent = '−';
+    zoomOutBtn.title = 'Zoom Out';
+    zoomOutBtn.onclick = () => zoomCanvas(-canvasZoom.step);
+    
+    // Add elements to zoom controls
+    zoomControls.appendChild(zoomInBtn);
+    zoomControls.appendChild(zoomDisplay);
+    zoomControls.appendChild(zoomOutBtn);
+    
+    canvas.appendChild(zoomControls);
+}
+
+function setupZoomEventListeners(canvas) {
+    const content = document.getElementById('flowchart-content');
+    
+    // Mouse wheel zoom
+    canvas.addEventListener('wheel', function(e) {
+        // Prevent default scrolling behavior when zooming
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Calculate zoom direction and amount
+            const delta = e.deltaY > 0 ? -canvasZoom.step : canvasZoom.step;
+            
+            zoomCanvasAtPoint(delta, mouseX, mouseY);
+        }
+    }, { passive: false });
+    
+    // Touch/gesture zoom support for mobile
+    let initialDistance = 0;
+    let initialScale = 1;
+    
+    canvas.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            initialDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+            initialScale = canvasZoom.scale;
+        }
+    }, { passive: false });
+    
+    canvas.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+            const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY
+            );
+            
+            const scale = (currentDistance / initialDistance) * initialScale;
+            const clampedScale = Math.max(canvasZoom.minScale, Math.min(canvasZoom.maxScale, scale));
+            
+            setCanvasZoom(clampedScale);
+        }
+    }, { passive: false });
+    
+    // Pan functionality with middle mouse button or space+drag
+    let isSpacePressed = false;
+    
+    document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space' && !e.repeat && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        isSpacePressed = true;
+        canvas.style.cursor = 'grab';
+    }
+    });
+    
+    document.addEventListener('keyup', function(e) {
+        if (e.code === 'Space') {
+            isSpacePressed = false;
+            canvas.style.cursor = '';
+            canvasZoom.isPanning = false;
+        }
+    });
+    
+    canvas.addEventListener('mousedown', function(e) {
+        if (e.button === 1 || (e.button === 0 && isSpacePressed)) { // Middle mouse or space+left mouse
+            e.preventDefault();
+            canvasZoom.isPanning = true;
+            canvasZoom.startPan = { x: e.clientX, y: e.clientY };
+            canvasZoom.startOffset = { x: canvasZoom.panX, y: canvasZoom.panY };
+            canvas.style.cursor = 'grabbing';
+        }
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+        if (canvasZoom.isPanning) {
+            const deltaX = e.clientX - canvasZoom.startPan.x;
+            const deltaY = e.clientY - canvasZoom.startPan.y;
+            
+            canvasZoom.panX = canvasZoom.startOffset.x + deltaX;
+            canvasZoom.panY = canvasZoom.startOffset.y + deltaY;
+            
+            applyCanvasTransform();
+        }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+        if (canvasZoom.isPanning) {
+            canvasZoom.isPanning = false;
+            canvas.style.cursor = isSpacePressed ? 'grab' : '';
+        }
+    });
+}
+
+function zoomCanvas(delta) {
+    const newScale = canvasZoom.scale + delta;
+    const clampedScale = Math.max(canvasZoom.minScale, Math.min(canvasZoom.maxScale, newScale));
+    
+    setCanvasZoom(clampedScale);
+}
+
+function zoomCanvasAtPoint(delta, mouseX, mouseY) {
+    const canvas = document.getElementById('flowchart-canvas');
+    const content = document.getElementById('flowchart-content');
+    const rect = canvas.getBoundingClientRect();
+    
+    // Calculate the point in the content coordinate system
+    const contentX = (mouseX - canvasZoom.panX) / canvasZoom.scale;
+    const contentY = (mouseY - canvasZoom.panY) / canvasZoom.scale;
+    
+    const oldScale = canvasZoom.scale;
+    const newScale = Math.max(canvasZoom.minScale, Math.min(canvasZoom.maxScale, oldScale + delta));
+    
+    if (newScale !== oldScale) {
+        // Adjust pan to keep the mouse point stationary
+        canvasZoom.panX = mouseX - contentX * newScale;
+        canvasZoom.panY = mouseY - contentY * newScale;
+        
+        canvasZoom.scale = newScale;
+        applyCanvasTransform();
+        updateZoomDisplay();
+    }
+}
+
+function setCanvasZoom(scale) {
+    canvasZoom.scale = Math.max(canvasZoom.minScale, Math.min(canvasZoom.maxScale, scale));
+    applyCanvasTransform();
+    updateZoomDisplay();
+}
+
+function applyCanvasTransform() {
+    const content = document.getElementById('flowchart-content');
+    if (content) {
+        content.style.transform = `translate(${canvasZoom.panX}px, ${canvasZoom.panY}px) scale(${canvasZoom.scale})`;
+    }
+    
+    // Update zoom control button states
+    updateZoomControlStates();
+}
+
+function updateZoomDisplay() {
+    const display = document.getElementById('zoom-level-display');
+    if (display) {
+        display.textContent = Math.round(canvasZoom.scale * 100) + '%';
+    }
+}
+
+function updateZoomControlStates() {
+    const zoomControls = document.querySelector('.canvas-zoom-controls');
+    if (zoomControls) {
+        const zoomInBtn = zoomControls.querySelector('.zoom-btn:first-child');
+        const zoomOutBtn = zoomControls.querySelector('.zoom-btn:last-child');
+        
+        if (zoomInBtn) {
+            zoomInBtn.disabled = canvasZoom.scale >= canvasZoom.maxScale;
+        }
+        if (zoomOutBtn) {
+            zoomOutBtn.disabled = canvasZoom.scale <= canvasZoom.minScale;
+        }
+    }
+}
+
+function resetCanvasZoom() {
+    canvasZoom.scale = 1.0;
+    canvasZoom.panX = 0;
+    canvasZoom.panY = 0;
+    applyCanvasTransform();
+    updateZoomDisplay();
+}
+
+// Enhanced fitToView with zoom consideration
+function fitToView() {
+    const canvas = document.getElementById('flowchart-canvas');
+    const nodes = Object.values(flowchart);
+    
+    if (nodes.length === 0) {
+        resetCanvasZoom();
+        return;
+    }
+    
+    // Calculate bounding box of all nodes
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    nodes.forEach(node => {
+        if (node.position) {
+            const nodeWidth = node.customSize?.width || 350;
+            const nodeHeight = node.customSize?.height || 200;
+            minX = Math.min(minX, node.position.x);
+            minY = Math.min(minY, node.position.y);
+            maxX = Math.max(maxX, node.position.x + nodeWidth);
+            maxY = Math.max(maxY, node.position.y + nodeHeight);
+        }
+    });
+    
+    // Add padding
+    const padding = 50;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+    
+    // Calculate required scale to fit content
+    const canvasRect = canvas.getBoundingClientRect();
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    
+    const scaleX = (canvasRect.width - 40) / contentWidth; // Account for canvas padding
+    const scaleY = (canvasRect.height - 40) / contentHeight;
+    const scale = Math.min(scaleX, scaleY, canvasZoom.maxScale);
+    
+    // Center the content
+    const scaledWidth = contentWidth * scale;
+    const scaledHeight = contentHeight * scale;
+    
+    canvasZoom.scale = Math.max(canvasZoom.minScale, scale);
+    canvasZoom.panX = (canvasRect.width - scaledWidth) / 2 - minX * scale;
+    canvasZoom.panY = (canvasRect.height - scaledHeight) / 2 - minY * scale;
+    
+    applyCanvasTransform();
+    updateZoomDisplay();
+}
+
+// Enhanced node dragging that works with zoom and pan
+function setupNodeDrag(nodeEl, node) {
+    let isDragging = false;
+    let startPos = { x: 0, y: 0 };
+    let startNodePos = { x: 0, y: 0 };
+    
+    nodeEl.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            return; // Don't drag when clicking buttons
+        }
+        
+        // Don't start dragging if we're panning
+        if (canvasZoom.isPanning || e.button === 1) {
+            return;
+        }
+        
+        isDragging = true;
+        startPos = { x: e.clientX, y: e.clientY };
+        startNodePos = { 
+            x: node.position?.x || 100, 
+            y: node.position?.y || 100 
+        };
+        
+        nodeEl.style.zIndex = '1000';
+        nodeEl.style.opacity = '0.8';
+        nodeEl.style.transform = 'scale(1.05)';
+        
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        // Calculate movement in canvas coordinates (accounting for zoom)
+        const deltaX = (e.clientX - startPos.x) / canvasZoom.scale;
+        const deltaY = (e.clientY - startPos.y) / canvasZoom.scale;
+        
+        const newX = Math.max(0, startNodePos.x + deltaX);
+        const newY = Math.max(0, startNodePos.y + deltaY);
+        
+        // Update DOM position
+        nodeEl.style.left = `${newX}px`;
+        nodeEl.style.top = `${newY}px`;
+        
+        // Update position in BOTH the node reference AND the main flowchart object
+        if (!node.position) node.position = {};
+        node.position.x = newX;
+        node.position.y = newY;
+        
+        // CRITICAL: Also update the main flowchart object
+        if (flowchart[node.id]) {
+            if (!flowchart[node.id].position) flowchart[node.id].position = {};
+            flowchart[node.id].position.x = newX;
+            flowchart[node.id].position.y = newY;
+        }
+        
+        // Canvas expansion logic (keeping existing code but with zoom support)
+        const content = document.getElementById('flowchart-content');
+        const nodeWidth = node.customSize?.width || 350;
+        const nodeHeight = node.customSize?.height || 200;
+        
+        const requiredWidth = newX + nodeWidth + 200;
+        const requiredHeight = newY + nodeHeight + 200;
+        
+        // Get current dimensions without transform to avoid interference
+        const currentTransform = content.style.transform;
+        content.style.transform = 'none';
+        const currentWidth = parseInt(content.style.width) || 1500;
+        const currentHeight = parseInt(content.style.height) || 1000;
+        content.style.transform = currentTransform;
+        
+        if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
+            const newCanvasWidth = Math.max(requiredWidth, currentWidth);
+            const newCanvasHeight = Math.max(requiredHeight, currentHeight);
+            
+            content.style.width = `${newCanvasWidth}px`;
+            content.style.height = `${newCanvasHeight}px`;
+            content.style.minWidth = `${newCanvasWidth}px`;
+            content.style.minHeight = `${newCanvasHeight}px`;
+            
+            const svg = content.querySelector('svg');
+            if (svg) {
+                svg.style.width = `${newCanvasWidth}px`;
+                svg.style.height = `${newCanvasHeight}px`;
+            }
+            
+            const nodeContainer = content.children[1];
+            if (nodeContainer) {
+                nodeContainer.style.width = `${newCanvasWidth}px`;
+                nodeContainer.style.height = `${newCanvasHeight}px`;
+            }
+        }
+        
+        // Re-render connections
+        const svg = document.querySelector('#flowchart-content svg');
+        if (svg) {
+            renderConnections(svg);
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        nodeEl.style.zIndex = '2';
+        nodeEl.style.opacity = '1';
+        nodeEl.style.transform = 'scale(1)';
+        
+        // Final position save when drag ends
+        const finalX = parseInt(nodeEl.style.left) || 0;
+        const finalY = parseInt(nodeEl.style.top) || 0;
+        
+        // Triple-save to ensure position is stored everywhere
+        if (!node.position) node.position = {};
+        node.position.x = finalX;
+        node.position.y = finalY;
+        
+        if (flowchart[node.id]) {
+            if (!flowchart[node.id].position) flowchart[node.id].position = {};
+            flowchart[node.id].position.x = finalX;
+            flowchart[node.id].position.y = finalY;
+        }
+    });
+}
+
+// Enhanced keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Only handle shortcuts when not typing in inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+    }
+    
+    switch(e.key) {
+        case '=':
+        case '+':
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                zoomCanvas(canvasZoom.step);
+            }
+            break;
+        case '-':
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                zoomCanvas(-canvasZoom.step);
+            }
+            break;
+        case '0':
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                resetCanvasZoom();
+            }
+            break;
+        case 'f':
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                fitToView();
+            }
+            break;
+    }
+});
+
+// Initialize zoom when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Reset zoom state on page load
+    canvasZoom.scale = 1.0;
+    canvasZoom.panX = 0;
+    canvasZoom.panY = 0;
+});
+
+// Also initialize immediately if DOM is already loaded
+if (document.readyState !== 'loading') {
+    canvasZoom.scale = 1.0;
+    canvasZoom.panX = 0;
+    canvasZoom.panY = 0;
 }
