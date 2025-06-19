@@ -16,6 +16,11 @@
                    <div class="sidebar-header">
                        <h1>📋 Think Track</h1>
                        <p>Create and navigate interactive flowcharts</p>
+                       
+                       <!-- Navigate button under logo -->
+                       <button class="btn btn-primary btn-large navigate-from-create">
+                           🔁 Navigate Flowchart
+                       </button>
                    </div>
                    
                    <div class="panel form-panel">
@@ -34,9 +39,9 @@
                            <div class="form-group">
                                <label for="node-image">Optional Image:</label>
                                <div class="file-input-wrapper">
-                                   <input type="file" id="node-image" accept="image/*" onchange="previewImage(event)">
-                                   <label for="node-image" class="file-input-label">📷 Add Image</label>
-                               </div>
+                                    <input type="file" id="import-json" accept=".json">
+                                    <label for="import-json" class="file-input-label">📁 Import JSON</label>
+                                </div>
                                <div id="image-preview" class="image-preview hidden">
                                    <img id="preview-img" alt="Preview">
                                    <button type="button" class="btn btn-danger" onclick="removeImage()" style="margin-top: 10px;">Remove Image</button>
@@ -67,12 +72,6 @@
                        <div class="flowchart-header">
                            <div class="flowchart-title">📊 Current Flowchart</div>
                            <div class="flowchart-stats" id="flowchart-stats">0 nodes</div>
-                           
-                           <!-- Mode tabs -->
-                           <div class="mode-tabs">
-                               <button class="mode-tab active" onclick="switchMode('create')">✏️ Create</button>
-                               <button class="mode-tab" onclick="switchMode('navigate')">🔁 Navigate</button>
-                           </div>
                        </div>
                        
                        <!-- Search Bar -->
@@ -119,25 +118,23 @@
            </div>
        </div>
 
-       <<!-- Navigate Mode -->
-<div id="navigate-mode" class="hidden">
-    <div class="panel">
-        <div class="flowchart-header">
-            <div class="flowchart-title">🔁 Navigate Flowchart</div>
-            <div></div> <!-- Empty spacer -->
-            
-            <!-- Mode tabs -->
-            <div class="mode-tabs">
-                <button class="mode-tab" onclick="switchMode('create')">✏️ Create</button>
-                <button class="mode-tab active" onclick="switchMode('navigate')">🔁 Navigate</button>
-            </div>
-        </div>
-        
-        <div id="navigation-content">
-            <p style="text-align: center; color: #666;">No flowchart loaded. Please create nodes or import a flowchart.</p>
-        </div>
-    </div>
-</div>
+       <!-- Navigate Mode -->
+       <div id="navigate-mode" class="hidden">
+           <div class="panel">
+               <div class="flowchart-header">
+                   <div class="flowchart-title">🔁 Navigate Flowchart</div>
+                   
+                   <!-- Create button on the right -->
+                   <button class="btn btn-primary create-from-navigate" onclick="switchMode('create')">
+                       ✏️ Back to Create
+                   </button>
+               </div>
+               
+               <div id="navigation-content">
+                   <p style="text-align: center; color: #666;">No flowchart loaded. Please create nodes or import a flowchart.</p>
+               </div>
+           </div>
+       </div>
    </div>
    <script src="main.js"></script>
    

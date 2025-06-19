@@ -1325,7 +1325,7 @@ textarea {
    /* Ensure smooth scrolling */
    scroll-behavior: smooth;
 }
-/* New sidebar header styles */
+/* New sidebar header styles with navigate button */
 .sidebar-header {
     text-align: center;
     margin-bottom: 20px;
@@ -1345,40 +1345,71 @@ textarea {
 .sidebar-header p {
     font-size: 0.9rem;
     color: #666;
-    margin: 0;
+    margin: 0 0 20px 0;
 }
 
-/* Mode tabs styles */
-.mode-tabs {
-    display: flex;
-    gap: 8px;
-    background: #f8f9fa;
-    padding: 4px;
-    border-radius: 8px;
-}
-
-.mode-tab {
-    padding: 8px 16px;
+/* Navigate button styling under logo */
+.navigate-from-create {
+    background: #27ae60 !important;
+    color: white;
+    font-size: 1rem;
+    padding: 16px 24px;
+    border-radius: 12px;
     border: none;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: transparent;
-    color: #666;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    margin-top: 15px;
+    width: 100%;
+    font-weight: 600;
 }
 
-.mode-tab.active {
-    background: #4CAF50;
+.navigate-from-create:hover {
+    background: #229954 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
+}
+
+.navigate-from-create:active {
+    transform: translateY(0);
+}
+
+/* Create button styling in navigate mode */
+.create-from-navigate {
+    background: #667eea !important;
     color: white;
-    transform: none;
-    box-shadow: 0 2px 6px rgba(76,175,80,0.3);
+    font-size: 0.95rem;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    font-weight: 600;
 }
 
-.mode-tab:hover:not(.active) {
-    background: #e9ecef;
-    color: #333;
+.create-from-navigate:hover {
+    background: #5a6fd8 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.create-from-navigate:active {
+    transform: translateY(0);
+}
+
+/* Hide old mode tabs */
+.mode-tabs {
+    display: none;
+}
+
+/* Remove old header and mode selector styles */
+.header {
+    display: none;
+}
+
+.mode-selector {
+    display: none;
 }
 
 /* Update flowchart header to use flexbox properly */

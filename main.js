@@ -1,9 +1,21 @@
+
 let flowchart = {};
 let currentNodeId = 'start';
 let navigationHistory = [];
 let editingNodeId = null;
 let currentImageData = null;
-
+// Enhanced Canvas Zoom and Pan Functionality
+let canvasZoom = {
+    scale: 1.0,
+    minScale: 0.1,
+    maxScale: 3.0,
+    step: 0.1,
+    panX: 0,
+    panY: 0,
+    isPanning: false,
+    startPan: { x: 0, y: 0 },
+    startOffset: { x: 0, y: 0 }
+};
 // Example flowcharts data
 const exampleFlowcharts = {
    'should-i-eat-it': {
@@ -68,10 +80,6 @@ const exampleFlowcharts = {
 };
 
 function switchMode(mode) {
-    // Update tab states
-    document.querySelectorAll('.mode-tab').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
     if (mode === 'create') {
         document.getElementById('create-mode').classList.remove('hidden');
         document.getElementById('navigate-mode').classList.add('hidden');
@@ -90,6 +98,29 @@ function switchMode(mode) {
         }
         
         loadNavigationView();
+    }
+}
+
+// Add this new function to check if navigation is available
+function isNavigationAvailable() {
+    return Object.keys(flowchart).length > 0;
+}
+
+// Update the navigate button state based on flowchart availability
+function updateNavigateButtonState() {
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        if (isNavigationAvailable()) {
+            navigateBtn.disabled = false;
+            navigateBtn.style.opacity = '1';
+            navigateBtn.style.cursor = 'pointer';
+            navigateBtn.title = 'Navigate through your flowchart';
+        } else {
+            navigateBtn.disabled = true;
+            navigateBtn.style.opacity = '0.6';
+            navigateBtn.style.cursor = 'not-allowed';
+            navigateBtn.title = 'Create some nodes first to enable navigation';
+        }
     }
 }
 
@@ -112,24 +143,28 @@ document.addEventListener('click', function(event) {
    }
 });
 
+// REPLACE your existing loadExample function (around line 130) with this COMPLETE version:
+
+// REPLACE the loadExample function (around line 130) with this COMPLETE version:
 function loadExample(exampleKey) {
-   if (exampleFlowcharts[exampleKey]) {
-       if (Object.keys(flowchart).length > 0) {
-           if (!confirm('This will replace your current flowchart. Continue?')) {
-               return;
-           }
-       }
-       
-       flowchart = JSON.parse(JSON.stringify(exampleFlowcharts[exampleKey])); // Deep copy
-       updateFlowchartDisplay();
-       resetForm();
-       
-       // Close dropdown
-       document.getElementById('example-dropdown').classList.remove('show');
-       document.getElementById('dropdown-arrow').textContent = '▼';
-       
-       alert(`Example "${exampleKey}" loaded successfully!`);
-   }
+    if (exampleFlowcharts[exampleKey]) {
+        if (Object.keys(flowchart).length > 0) {
+            if (!confirm('This will replace your current flowchart. Continue?')) {
+                return;
+            }
+        }
+        
+        // Use deep copy to preserve the example data structure
+        flowchart = JSON.parse(JSON.stringify(exampleFlowcharts[exampleKey]));
+        updateFlowchartDisplay();
+        resetForm();
+        
+        // Close dropdown
+        document.getElementById('example-dropdown').classList.remove('show');
+        document.getElementById('dropdown-arrow').textContent = '▼';
+        
+        alert(`Example "${exampleKey}" loaded successfully!`);
+    }
 }
 
 function addOption() {
@@ -152,6 +187,8 @@ function removeOption(button) {
 }
 
 // Replace the entire generateNodePosition() function in main.js
+// REPLACE THE generateNodePosition AND calculateHierarchicalPosition FUNCTIONS (around lines 160-220) WITH THIS:
+
 function generateNodePosition() {
    const existingNodes = Object.values(flowchart);
    
@@ -162,6 +199,9 @@ function generateNodePosition() {
    // Use hierarchical layout for better organization
    return calculateHierarchicalPosition();
 }
+
+
+// REPLACE your entire calculateHierarchicalPosition function (around lines 180-250) with this COMPLETE version:
 
 function calculateHierarchicalPosition() {
    const existingNodes = Object.values(flowchart);
@@ -256,6 +296,45 @@ function calculateHierarchicalPosition() {
        return { x, y };
    }
 }
+
+// REPLACE the validateAndFixNodePositions function (around line 400) with this:
+function validateAndFixNodePositions() {
+    console.log('=== VALIDATING NODE POSITIONS ===');
+    
+    Object.keys(flowchart).forEach(nodeId => {
+        const node = flowchart[nodeId];
+        
+        // Only fix positions that are truly broken, not just missing decimal places
+        const hasValidPosition = node.position && 
+                               typeof node.position.x === 'number' && 
+                               typeof node.position.y === 'number' &&
+                               !isNaN(node.position.x) && 
+                               !isNaN(node.position.y) &&
+                               node.position.x >= 0 && 
+                               node.position.y >= 0;
+        
+        if (!hasValidPosition) {
+            console.warn(`Node ${nodeId} has invalid position:`, node.position);
+            
+            // Generate a fallback position only for truly broken nodes
+            const nodeIndex = Object.keys(flowchart).indexOf(nodeId);
+            node.position = {
+                x: 150 + (nodeIndex % 3) * 300,
+                y: 100 + Math.floor(nodeIndex / 3) * 250
+            };
+            
+            console.log(`Fixed position for ${nodeId}:`, node.position);
+        } else {
+            console.log(`Node ${nodeId} position is valid:`, node.position);
+        }
+    });
+    
+    console.log('=== POSITION VALIDATION COMPLETE ===');
+}
+
+// FIXED: Enhanced renderFlowchart with position validation
+// REPLACE THE renderFlowchart FUNCTION (around line 250) WITH THIS:
+
 function renderFlowchart() {
    const canvas = document.getElementById('flowchart-canvas');
    const content = document.getElementById('flowchart-content');
@@ -271,13 +350,16 @@ function renderFlowchart() {
        return;
    }
    
+   // CRITICAL FIX: DON'T call validateAndFixNodePositions here
+   // Only validate in updateFlowchartDisplay when truly needed
+   
    // Clear existing content
    content.innerHTML = '';
    
    // Calculate required canvas size based on node positions with generous padding
    let maxX = 0, maxY = 0;
    Object.values(flowchart).forEach(node => {
-       if (node.position) {
+       if (node.position && typeof node.position.x === 'number' && typeof node.position.y === 'number') {
            // Use actual node dimensions or reasonable defaults
            const nodeWidth = node.customSize?.width || 350;
            const nodeHeight = node.customSize?.height || 200;
@@ -323,341 +405,360 @@ function renderFlowchart() {
    
    // Render connections
    renderConnections(svg);
+   
+   console.log('Flowchart rendered with positions:', 
+       Object.fromEntries(Object.entries(flowchart).map(([id, node]) => [id, node.position]))
+   );
 }
 
+
+// REPLACE the renderNode function with this version that fixes reference issues:
 function renderNode(node, container) {
-   console.log(`Rendering node ${node.id} with position:`, node.position);
-   
-   const nodeEl = document.createElement('div');
-   nodeEl.className = 'flowchart-node';
-   nodeEl.id = `node-${node.id}`;
-   nodeEl.style.position = 'absolute';
-   
-   // Use the stored position, with explicit defaults
-   const posX = (node.position && typeof node.position.x === 'number') ? node.position.x : 100;
-   const posY = (node.position && typeof node.position.y === 'number') ? node.position.y : 100;
-   
-   nodeEl.style.left = `${posX}px`;
-   nodeEl.style.top = `${posY}px`;
-   
-   console.log(`Set node ${node.id} DOM position to: left=${posX}px, top=${posY}px`);
-   
-   // Apply custom size if it exists, otherwise use fit-content
-   if (node.customSize) {
-       nodeEl.style.width = `${node.customSize.width}px`;
-       nodeEl.style.height = `${node.customSize.height}px`;
-       nodeEl.style.maxWidth = 'none';
-   } else {
-       nodeEl.style.width = 'fit-content';
-       nodeEl.style.maxWidth = '350px';
-   }
-   nodeEl.style.minWidth = '160px';
-   nodeEl.style.minHeight = '120px';
-   nodeEl.style.background = 'white';
-   nodeEl.style.border = '2px solid #667eea';
-   nodeEl.style.borderRadius = '12px';
-   nodeEl.style.padding = '12px';
-   nodeEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-   nodeEl.style.cursor = 'move';
-   nodeEl.style.userSelect = 'none';
-   nodeEl.style.fontSize = '0.85rem';
-   nodeEl.style.wordWrap = 'break-word';
-   nodeEl.style.overflowWrap = 'break-word';
-   
-   // Add node type styling
-   const isStart = node.id === 'start' || !Object.values(flowchart).some(n => 
-       n.options.some(opt => opt.nextNodeId === node.id)
-   );
-   const isEnd = node.options.length === 0 || 
-       node.options.every(opt => !flowchart[opt.nextNodeId]);
-   
-   if (isStart) {
-       nodeEl.style.borderColor = '#27ae60';
-       nodeEl.style.borderLeftWidth = '6px';
-   } else if (isEnd) {
-       nodeEl.style.borderColor = '#e74c3c';
-       nodeEl.style.borderLeftWidth = '6px';
-   }
-   
-   // Node header
-   const header = document.createElement('div');
-   header.style.display = 'flex';
-   header.style.justifyContent = 'space-between';
-   header.style.alignItems = 'center';
-   header.style.marginBottom = '8px';
-   header.style.fontSize = '0.75rem';
-   header.style.fontWeight = 'bold';
-   header.style.color = '#333';
-   header.style.fontFamily = 'Monaco, Consolas, monospace';
-   header.textContent = node.id;
-   
-   // Node indicators
-   const indicators = document.createElement('div');
-   indicators.style.display = 'flex';
-   indicators.style.gap = '4px';
-   
-   if (node.image) {
-       const imgIndicator = document.createElement('div');
-       imgIndicator.style.width = '16px';
-       imgIndicator.style.height = '16px';
-       imgIndicator.style.borderRadius = '50%';
-       imgIndicator.style.background = '#3498db';
-       imgIndicator.style.color = 'white';
-       imgIndicator.style.display = 'flex';
-       imgIndicator.style.alignItems = 'center';
-       imgIndicator.style.justifyContent = 'center';
-       imgIndicator.style.fontSize = '0.6rem';
-       imgIndicator.textContent = '📷';
-       indicators.appendChild(imgIndicator);
-   }
-   
-   const brokenLinks = node.options.filter(opt => !flowchart[opt.nextNodeId]);
-   if (brokenLinks.length > 0) {
-       const warningIndicator = document.createElement('div');
-       warningIndicator.style.width = '16px';
-       warningIndicator.style.height = '16px';
-       warningIndicator.style.borderRadius = '50%';
-       warningIndicator.style.background = '#e74c3c';
-       warningIndicator.style.color = 'white';
-       warningIndicator.style.display = 'flex';
-       warningIndicator.style.alignItems = 'center';
-       warningIndicator.style.justifyContent = 'center';
-       warningIndicator.style.fontSize = '0.6rem';
-       warningIndicator.textContent = '⚠️';
-       indicators.appendChild(warningIndicator);
-   }
-   
-   header.appendChild(indicators);
-   nodeEl.appendChild(header);
-   
-   // Node instruction
-   const instruction = document.createElement('div');
-   instruction.style.marginBottom = '8px';
-   instruction.style.fontSize = '0.8rem';
-   instruction.style.lineHeight = '1.3';
-   instruction.style.color = '#333';
-   instruction.style.wordWrap = 'break-word';
-   instruction.innerHTML = linkifyText(node.instruction);
-   nodeEl.appendChild(instruction);
-   
-   // Node options
-   if (node.options.length > 0) {
-       const optionsContainer = document.createElement('div');
-       optionsContainer.style.marginBottom = '8px';
-       
-       node.options.forEach(option => {
-           const optionEl = document.createElement('div');
-           optionEl.style.display = 'flex';
-           optionEl.style.alignItems = 'center';
-           optionEl.style.padding = '4px 6px';
-           optionEl.style.background = '#f8f9fa';
-           optionEl.style.borderRadius = '4px';
-           optionEl.style.marginBottom = '2px';
-           optionEl.style.fontSize = '0.7rem';
-           optionEl.style.borderLeft = '3px solid #667eea';
-           
-           const isValid = flowchart[option.nextNodeId];
-           if (!isValid) {
-               optionEl.style.borderLeftColor = '#e74c3c';
-               optionEl.style.background = '#ffeaea';
-           }
-           
-           const label = document.createElement('span');
-           label.style.fontWeight = '600';
-           label.style.marginRight = '6px';
-           label.textContent = option.label;
-           
-           const arrow = document.createElement('span');
-           arrow.style.margin = '0 4px';
-           arrow.style.color = '#666';
-           arrow.textContent = '→';
-           
-           const target = document.createElement('span');
-           target.style.fontFamily = 'Monaco, Consolas, monospace';
-           target.style.fontSize = '0.65rem';
-           target.style.color = isValid ? '#667eea' : '#e74c3c';
-           target.textContent = option.nextNodeId;
-           
-           optionEl.appendChild(label);
-           optionEl.appendChild(arrow);
-           optionEl.appendChild(target);
-           
-           if (!isValid) {
-               const warning = document.createElement('span');
-               warning.style.color = '#e74c3c';
-               warning.style.fontSize = '0.6rem';
-               warning.style.marginLeft = '4px';
-               warning.textContent = '⚠️';
-               optionEl.appendChild(warning);
-           }
-           
-           optionsContainer.appendChild(optionEl);
-       });
-       
-       nodeEl.appendChild(optionsContainer);
-   }
-   
-   // Node actions
-   const actions = document.createElement('div');
-   actions.style.display = 'flex';
-   actions.style.gap = '4px';
-   actions.style.paddingTop = '8px';
-   actions.style.borderTop = '1px solid #e0e0e0';
-   
-   const editBtn = document.createElement('button');
-   editBtn.className = 'btn btn-primary';
-   editBtn.style.padding = '4px 8px';
-   editBtn.style.fontSize = '0.7rem';
-   editBtn.style.margin = '0';
-   editBtn.textContent = '✏️ Edit';
-   editBtn.onclick = (e) => {
-       e.stopPropagation();
-       editNode(node.id);
-   };
-   
-   const deleteBtn = document.createElement('button');
-   deleteBtn.className = 'btn btn-danger';
-   deleteBtn.style.padding = '4px 8px';
-   deleteBtn.style.fontSize = '0.7rem';
-   deleteBtn.style.margin = '0';
-   deleteBtn.textContent = '🗑️ Delete';
-   deleteBtn.onclick = (e) => {
-       e.stopPropagation();
-       deleteNode(node.id);
-   };
-   
-   actions.appendChild(editBtn);
-   actions.appendChild(deleteBtn);
-   nodeEl.appendChild(actions);
-   
-   // Add drag functionality - IMPORTANT: Pass the actual flowchart node, not just the parameter
-   setupNodeDrag(nodeEl, flowchart[node.id]);
-   
-   container.appendChild(nodeEl);
-   
-   // Verify final position after rendering
-   console.log(`Node ${node.id} final DOM position: left=${nodeEl.style.left}, top=${nodeEl.style.top}`);
+    console.log(`Rendering node ${node.id} with position:`, node.position);
+    
+    const nodeEl = document.createElement('div');
+    nodeEl.className = 'flowchart-node';
+    nodeEl.id = `node-${node.id}`;
+    nodeEl.style.position = 'absolute';
+    
+    const mainNodeData = flowchart[node.id];
+    
+    const posX = (mainNodeData.position && typeof mainNodeData.position.x === 'number') ? mainNodeData.position.x : 100;
+const posY = (mainNodeData.position && typeof mainNodeData.position.y === 'number') ? mainNodeData.position.y : 100;
+
+nodeEl.style.left = `${posX}px`;
+nodeEl.style.top = `${posY}px`;
+
+console.log(`Set node ${node.id} DOM position to: left=${posX}px, top=${posY}px`);
+    
+    // Apply custom size if it exists, otherwise use fit-content
+    if (mainNodeData.customSize) {
+        nodeEl.style.width = `${mainNodeData.customSize.width}px`;
+        nodeEl.style.height = `${mainNodeData.customSize.height}px`;
+        nodeEl.style.maxWidth = 'none';
+    } else {
+        nodeEl.style.width = 'fit-content';
+        nodeEl.style.maxWidth = '350px';
+    }
+    nodeEl.style.minWidth = '160px';
+    nodeEl.style.minHeight = '120px';
+    nodeEl.style.background = 'white';
+    nodeEl.style.border = '2px solid #667eea';
+    nodeEl.style.borderRadius = '12px';
+    nodeEl.style.padding = '12px';
+    nodeEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+    nodeEl.style.cursor = 'move';
+    nodeEl.style.userSelect = 'none';
+    nodeEl.style.fontSize = '0.85rem';
+    nodeEl.style.wordWrap = 'break-word';
+    nodeEl.style.overflowWrap = 'break-word';
+    
+    // Add node type styling
+    const isStart = node.id === 'start' || !Object.values(flowchart).some(n => 
+        n.options.some(opt => opt.nextNodeId === node.id)
+    );
+    const isEnd = node.options.length === 0 || 
+        node.options.every(opt => !flowchart[opt.nextNodeId]);
+    
+    if (isStart) {
+        nodeEl.style.borderColor = '#27ae60';
+        nodeEl.style.borderLeftWidth = '6px';
+    } else if (isEnd) {
+        nodeEl.style.borderColor = '#e74c3c';
+        nodeEl.style.borderLeftWidth = '6px';
+    }
+    
+    // Node header
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '8px';
+    header.style.fontSize = '0.75rem';
+    header.style.fontWeight = 'bold';
+    header.style.color = '#333';
+    header.style.fontFamily = 'Monaco, Consolas, monospace';
+    header.textContent = node.id;
+    
+    // Node indicators
+    const indicators = document.createElement('div');
+    indicators.style.display = 'flex';
+    indicators.style.gap = '4px';
+    
+    if (node.image) {
+        const imgIndicator = document.createElement('div');
+        imgIndicator.style.width = '16px';
+        imgIndicator.style.height = '16px';
+        imgIndicator.style.borderRadius = '50%';
+        imgIndicator.style.background = '#3498db';
+        imgIndicator.style.color = 'white';
+        imgIndicator.style.display = 'flex';
+        imgIndicator.style.alignItems = 'center';
+        imgIndicator.style.justifyContent = 'center';
+        imgIndicator.style.fontSize = '0.6rem';
+        imgIndicator.textContent = '📷';
+        indicators.appendChild(imgIndicator);
+    }
+    
+    const brokenLinks = node.options.filter(opt => !flowchart[opt.nextNodeId]);
+    if (brokenLinks.length > 0) {
+        const warningIndicator = document.createElement('div');
+        warningIndicator.style.width = '16px';
+        warningIndicator.style.height = '16px';
+        warningIndicator.style.borderRadius = '50%';
+        warningIndicator.style.background = '#e74c3c';
+        warningIndicator.style.color = 'white';
+        warningIndicator.style.display = 'flex';
+        warningIndicator.style.alignItems = 'center';
+        warningIndicator.style.justifyContent = 'center';
+        warningIndicator.style.fontSize = '0.6rem';
+        warningIndicator.textContent = '⚠️';
+        indicators.appendChild(warningIndicator);
+    }
+    
+    header.appendChild(indicators);
+    nodeEl.appendChild(header);
+    
+    // Node instruction
+    const instruction = document.createElement('div');
+    instruction.style.marginBottom = '8px';
+    instruction.style.fontSize = '0.8rem';
+    instruction.style.lineHeight = '1.3';
+    instruction.style.color = '#333';
+    instruction.style.wordWrap = 'break-word';
+    instruction.innerHTML = linkifyText(node.instruction);
+    nodeEl.appendChild(instruction);
+    
+    // Node options
+    if (node.options.length > 0) {
+        const optionsContainer = document.createElement('div');
+        optionsContainer.style.marginBottom = '8px';
+        
+        node.options.forEach(option => {
+            const optionEl = document.createElement('div');
+            optionEl.style.display = 'flex';
+            optionEl.style.alignItems = 'center';
+            optionEl.style.padding = '4px 6px';
+            optionEl.style.background = '#f8f9fa';
+            optionEl.style.borderRadius = '4px';
+            optionEl.style.marginBottom = '2px';
+            optionEl.style.fontSize = '0.7rem';
+            optionEl.style.borderLeft = '3px solid #667eea';
+            
+            const isValid = flowchart[option.nextNodeId];
+            if (!isValid) {
+                optionEl.style.borderLeftColor = '#e74c3c';
+                optionEl.style.background = '#ffeaea';
+            }
+            
+            const label = document.createElement('span');
+            label.style.fontWeight = '600';
+            label.style.marginRight = '6px';
+            label.textContent = option.label;
+            
+            const arrow = document.createElement('span');
+            arrow.style.margin = '0 4px';
+            arrow.style.color = '#666';
+            arrow.textContent = '→';
+            
+            const target = document.createElement('span');
+            target.style.fontFamily = 'Monaco, Consolas, monospace';
+            target.style.fontSize = '0.65rem';
+            target.style.color = isValid ? '#667eea' : '#e74c3c';
+            target.textContent = option.nextNodeId;
+            
+            optionEl.appendChild(label);
+            optionEl.appendChild(arrow);
+            optionEl.appendChild(target);
+            
+            if (!isValid) {
+                const warning = document.createElement('span');
+                warning.style.color = '#e74c3c';
+                warning.style.fontSize = '0.6rem';
+                warning.style.marginLeft = '4px';
+                warning.textContent = '⚠️';
+                optionEl.appendChild(warning);
+            }
+            
+            optionsContainer.appendChild(optionEl);
+        });
+        
+        nodeEl.appendChild(optionsContainer);
+    }
+    
+    // Node actions
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '4px';
+    actions.style.paddingTop = '8px';
+    actions.style.borderTop = '1px solid #e0e0e0';
+    
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-primary';
+    editBtn.style.padding = '4px 8px';
+    editBtn.style.fontSize = '0.7rem';
+    editBtn.style.margin = '0';
+    editBtn.textContent = '✏️ Edit';
+    editBtn.onclick = (e) => {
+        e.stopPropagation();
+        editNode(node.id);
+    };
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-danger';
+    deleteBtn.style.padding = '4px 8px';
+    deleteBtn.style.fontSize = '0.7rem';
+    deleteBtn.style.margin = '0';
+    deleteBtn.textContent = '🗑️ Delete';
+    deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteNode(node.id);
+    };
+    
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    nodeEl.appendChild(actions);
+    
+    // CRITICAL FIX: Pass main flowchart node reference (not the render parameter)
+    setupNodeDrag(nodeEl, mainNodeData);
+    
+    container.appendChild(nodeEl);
+    
+    // Verify position after rendering
+    console.log(`Node ${node.id} final DOM position: left=${nodeEl.style.left}, top=${nodeEl.style.top}`);
+    console.log(`Node ${node.id} stored position:`, mainNodeData.position);
 }
 
 // Enhanced setupNodeDrag with better position tracking
+
+// REPLACE the setupNodeDrag function completely with this:
 function setupNodeDrag(nodeEl, node) {
-   let isDragging = false;
-   let startPos = { x: 0, y: 0 };
-   let startNodePos = { x: 0, y: 0 };
-   
-   nodeEl.addEventListener('mousedown', (e) => {
-       if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-           return; // Don't drag when clicking buttons
-       }
-       
-       isDragging = true;
-       startPos = { x: e.clientX, y: e.clientY };
-       startNodePos = { 
-           x: node.position?.x || 100, 
-           y: node.position?.y || 100 
-       };
-       
-       nodeEl.style.zIndex = '1000';
-       nodeEl.style.opacity = '0.8';
-       nodeEl.style.transform = 'scale(1.05)';
-       
-       console.log(`Started dragging ${node.id} from position:`, startNodePos);
-       
-       e.preventDefault();
-   });
-   
-   document.addEventListener('mousemove', (e) => {
-       if (!isDragging) return;
-       
-       const dx = e.clientX - startPos.x;
-       const dy = e.clientY - startPos.y;
-       
-       const newX = Math.max(0, startNodePos.x + dx);
-       const newY = Math.max(0, startNodePos.y + dy);
-       
-       // Update DOM position
-       nodeEl.style.left = `${newX}px`;
-       nodeEl.style.top = `${newY}px`;
-       
-       // Update position in BOTH the node reference AND the main flowchart object
-       if (!node.position) node.position = {};
-       node.position.x = newX;
-       node.position.y = newY;
-       
-       // CRITICAL: Also update the main flowchart object
-       if (flowchart[node.id]) {
-           if (!flowchart[node.id].position) flowchart[node.id].position = {};
-           flowchart[node.id].position.x = newX;
-           flowchart[node.id].position.y = newY;
-       }
-       
-       // Canvas expansion logic (keeping existing code)
-       const content = document.getElementById('flowchart-content');
-       const nodeWidth = node.customSize?.width || 350;
-       const nodeHeight = node.customSize?.height || 200;
-       
-       const requiredWidth = newX + nodeWidth + 200;
-       const requiredHeight = newY + nodeHeight + 200;
-       
-       const currentWidth = parseInt(content.style.width) || 1500;
-       const currentHeight = parseInt(content.style.height) || 1000;
-       
-       if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
-           const newCanvasWidth = Math.max(requiredWidth, currentWidth);
-           const newCanvasHeight = Math.max(requiredHeight, currentHeight);
-           
-           content.style.width = `${newCanvasWidth}px`;
-           content.style.height = `${newCanvasHeight}px`;
-           content.style.minWidth = `${newCanvasWidth}px`;
-           content.style.minHeight = `${newCanvasHeight}px`;
-           
-           const svg = content.querySelector('svg');
-           if (svg) {
-               svg.style.width = `${newCanvasWidth}px`;
-               svg.style.height = `${newCanvasHeight}px`;
-           }
-           
-           const nodeContainer = content.children[1];
-           if (nodeContainer) {
-               nodeContainer.style.width = `${newCanvasWidth}px`;
-               nodeContainer.style.height = `${newCanvasHeight}px`;
-           }
-       }
-       
-       // Re-render connections
-       const svg = document.querySelector('#flowchart-content svg');
-       if (svg) {
-           renderConnections(svg);
-       }
-   });
-   
-   document.addEventListener('mouseup', () => {
-       if (!isDragging) return;
-       
-       isDragging = false;
-       nodeEl.style.zIndex = '2';
-       nodeEl.style.opacity = '1';
-       nodeEl.style.transform = 'scale(1)';
-       
-       // Final position save when drag ends
-       const finalX = parseInt(nodeEl.style.left) || 0;
-       const finalY = parseInt(nodeEl.style.top) || 0;
-       
-       // Triple-save to ensure position is stored everywhere
-       if (!node.position) node.position = {};
-       node.position.x = finalX;
-       node.position.y = finalY;
-       
-       if (flowchart[node.id]) {
-           if (!flowchart[node.id].position) flowchart[node.id].position = {};
-           flowchart[node.id].position.x = finalX;
-           flowchart[node.id].position.y = finalY;
-       }
-       
-       console.log(`Finished dragging ${node.id} to position:`, {x: finalX, y: finalY});
-       console.log(`Confirmed in flowchart[${node.id}]:`, flowchart[node.id].position);
-   });
+    let isDragging = false;
+    let startPos = { x: 0, y: 0 };
+    let startNodePos = { x: 0, y: 0 };
+    
+    nodeEl.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            return; // Don't drag when clicking buttons
+        }
+        
+        isDragging = true;
+        startPos = { x: e.clientX, y: e.clientY };
+        
+        // CRITICAL FIX: Ensure position exists and get from main flowchart object
+        const mainNode = flowchart[node.id];
+        if (!mainNode.position) {
+            mainNode.position = { x: 100, y: 100 };
+        }
+        
+        startNodePos = { 
+            x: mainNode.position.x, 
+            y: mainNode.position.y 
+        };
+        
+        nodeEl.style.zIndex = '1000';
+        nodeEl.style.opacity = '0.8';
+        nodeEl.style.transform = 'scale(1.05)';
+        
+        console.log(`Started dragging ${node.id} from position:`, startNodePos);
+        
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const dx = e.clientX - startPos.x;
+        const dy = e.clientY - startPos.y;
+        
+        const newX = Math.max(0, startNodePos.x + dx);
+        const newY = Math.max(0, startNodePos.y + dy);
+        
+        // Update DOM position immediately
+        nodeEl.style.left = `${newX}px`;
+        nodeEl.style.top = `${newY}px`;
+        
+        // CRITICAL FIX: Update ONLY the main flowchart object position properties
+        const mainNode = flowchart[node.id];
+        if (!mainNode.position) {
+            mainNode.position = { x: newX, y: newY };
+        } else {
+            mainNode.position.x = newX;
+            mainNode.position.y = newY;
+        }
+        
+        console.log(`Dragging ${node.id} to:`, { x: newX, y: newY });
+        console.log(`Main flowchart position:`, mainNode.position);
+        
+        // Canvas expansion logic
+        const content = document.getElementById('flowchart-content');
+        const nodeWidth = mainNode.customSize?.width || 350;
+        const nodeHeight = mainNode.customSize?.height || 200;
+        
+        const requiredWidth = newX + nodeWidth + 200;
+        const requiredHeight = newY + nodeHeight + 200;
+        
+        const currentWidth = parseInt(content.style.width) || 1500;
+        const currentHeight = parseInt(content.style.height) || 1000;
+        
+        if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
+            const newCanvasWidth = Math.max(requiredWidth, currentWidth);
+            const newCanvasHeight = Math.max(requiredHeight, currentHeight);
+            
+            content.style.width = `${newCanvasWidth}px`;
+            content.style.height = `${newCanvasHeight}px`;
+            content.style.minWidth = `${newCanvasWidth}px`;
+            content.style.minHeight = `${newCanvasHeight}px`;
+            
+            const svg = content.querySelector('svg');
+            if (svg) {
+                svg.style.width = `${newCanvasWidth}px`;
+                svg.style.height = `${newCanvasHeight}px`;
+            }
+            
+            const nodeContainer = content.children[1];
+            if (nodeContainer) {
+                nodeContainer.style.width = `${newCanvasWidth}px`;
+                nodeContainer.style.height = `${newCanvasHeight}px`;
+            }
+        }
+        
+        // Re-render connections
+        const svg = document.querySelector('#flowchart-content svg');
+        if (svg) {
+            renderConnections(svg);
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        nodeEl.style.zIndex = '2';
+        nodeEl.style.opacity = '1';
+        nodeEl.style.transform = 'scale(1)';
+        
+        // CRITICAL FIX: Get final position from DOM and save to main object
+        const finalX = parseInt(nodeEl.style.left) || 0;
+        const finalY = parseInt(nodeEl.style.top) || 0;
+        
+        const mainNode = flowchart[node.id];
+        if (!mainNode.position) {
+            mainNode.position = { x: finalX, y: finalY };
+        } else {
+            mainNode.position.x = finalX;
+            mainNode.position.y = finalY;
+        }
+        
+        console.log(`FINAL position for ${node.id}:`, mainNode.position);
+        
+        // Verify the position is properly saved
+        setTimeout(() => {
+            console.log(`VERIFIED position for ${node.id}:`, flowchart[node.id].position);
+        }, 100);
+    });
 }
+
 
 function renderConnections(svg) {
    // Clear existing connections
@@ -710,50 +811,109 @@ function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
            y: nodePos.y
        };
    } else {
-       // For output connections, find the specific option element
-       if (nodeEl) {
-           const optionsContainer = nodeEl.children[2]; // Header, instruction, then options
-           if (optionsContainer && optionsContainer.children[optionIndex]) {
-               const optionEl = optionsContainer.children[optionIndex];
-               
-               // Get the canvas and content elements
-               const canvas = document.getElementById('flowchart-canvas');
-               const content = document.getElementById('flowchart-content');
-               
-               // Get bounding rectangles
-               const optionRect = optionEl.getBoundingClientRect();
-               const canvasRect = canvas.getBoundingClientRect();
-               
-               // Account for zoom and pan by using the actual node position data
-               // instead of trying to calculate from transformed DOM positions
-               const relativeX = nodePos.x + nodeWidth;
-               const relativeY = nodePos.y + (optionRect.height / 2) + (optionIndex * (optionRect.height + 2)) + 40; // Approximate option offset
-               
-               return {
-                   x: relativeX,
-                   y: relativeY
+       // For output connections, we need to find the target node to determine the best side
+       const targetNodeId = node.options[optionIndex]?.nextNodeId;
+       const targetNode = flowchart[targetNodeId];
+       
+       if (!targetNode || !targetNode.position) {
+           // Fallback to right side if target not found
+           return {
+               x: nodePos.x + nodeWidth,
+               y: nodePos.y + nodeHeight / 2 + (optionIndex * 30)
+           };
+       }
+       
+       // Calculate which side is closer to the target
+       const sourceCenter = { x: nodePos.x + nodeWidth / 2, y: nodePos.y + nodeHeight / 2 };
+       const targetCenter = { x: targetNode.position.x + (nodeWidth / 2), y: targetNode.position.y + (nodeHeight / 2) };
+       
+       // Determine the best connection side based on relative positions
+       const deltaX = targetCenter.x - sourceCenter.x;
+       const deltaY = targetCenter.y - sourceCenter.y;
+       
+       let connectionPoint;
+       
+       // If target is significantly to the left, connect from left side
+       if (deltaX < -nodeWidth * 0.3) {
+           connectionPoint = {
+               x: nodePos.x,
+               y: nodePos.y + nodeHeight / 2 + (optionIndex * 30)
+           };
+       }
+       // If target is significantly to the right, connect from right side
+       else if (deltaX > nodeWidth * 0.3) {
+           connectionPoint = {
+               x: nodePos.x + nodeWidth,
+               y: nodePos.y + nodeHeight / 2 + (optionIndex * 30)
+           };
+       }
+       // If target is roughly horizontally aligned, choose based on vertical position
+       else {
+           // If target is below, connect from bottom
+           if (deltaY > nodeHeight * 0.5) {
+               connectionPoint = {
+                   x: nodePos.x + nodeWidth / 2 + (optionIndex - totalOptions / 2) * 40,
+                   y: nodePos.y + nodeHeight
+               };
+           }
+           // If target is above, connect from top
+           else if (deltaY < -nodeHeight * 0.5) {
+               connectionPoint = {
+                   x: nodePos.x + nodeWidth / 2 + (optionIndex - totalOptions / 2) * 40,
+                   y: nodePos.y
+               };
+           }
+           // Default to right side for same level
+           else {
+               connectionPoint = {
+                   x: nodePos.x + nodeWidth,
+                   y: nodePos.y + nodeHeight / 2 + (optionIndex * 30)
                };
            }
        }
        
-       // Fallback to bottom of node if option element not found
-       const spacing = nodeWidth / (totalOptions + 1);
-       return {
-           x: nodePos.x + spacing * (optionIndex + 1),
-           y: nodePos.y + nodeHeight
-       };
+       return connectionPoint;
    }
 }
 
 function createConnectionLine(start, end, label) {
    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
    
-   // Create curved path
+   // Create curved path with smarter control points
    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
    
-   const midY = start.y + (end.y - start.y) * 0.5;
-   const controlPoint1 = { x: start.x, y: midY };
-   const controlPoint2 = { x: end.x, y: midY };
+   // Calculate the distance and direction
+   const deltaX = end.x - start.x;
+   const deltaY = end.y - start.y;
+   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+   
+   // Adjust control points based on connection direction
+   let controlPoint1, controlPoint2;
+   
+   // For horizontal connections
+   if (Math.abs(deltaX) > Math.abs(deltaY)) {
+       const controlDistance = Math.min(distance * 0.4, 100);
+       controlPoint1 = { 
+           x: start.x + (deltaX > 0 ? controlDistance : -controlDistance), 
+           y: start.y 
+       };
+       controlPoint2 = { 
+           x: end.x - (deltaX > 0 ? controlDistance : -controlDistance), 
+           y: end.y 
+       };
+   }
+   // For vertical connections
+   else {
+       const controlDistance = Math.min(distance * 0.4, 80);
+       controlPoint1 = { 
+           x: start.x, 
+           y: start.y + (deltaY > 0 ? controlDistance : -controlDistance) 
+       };
+       controlPoint2 = { 
+           x: end.x, 
+           y: end.y - (deltaY > 0 ? controlDistance : -controlDistance) 
+       };
+   }
    
    const pathData = `M ${start.x} ${start.y} C ${controlPoint1.x} ${controlPoint1.y}, ${controlPoint2.x} ${controlPoint2.y}, ${end.x} ${end.y}`;
    
@@ -766,7 +926,7 @@ function createConnectionLine(start, end, label) {
    group.appendChild(path);
    
    // Add label if there's space and it's not too long
-   if (label && label.length < 20 && Math.abs(end.y - start.y) > 60) {
+   if (label && label.length < 20 && distance > 80) {
        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
        const labelX = (start.x + end.x) / 2;
        const labelY = (start.y + end.y) / 2;
@@ -799,22 +959,44 @@ function createConnectionLine(start, end, label) {
    return group;
 }
 
+// REPLACE the updateFlowchartDisplay function (around line 700) with this:
 function updateFlowchartDisplay() {
-   const stats = document.getElementById('flowchart-stats');
-   const searchContainer = document.getElementById('search-container');
-   
-   const nodeCount = Object.keys(flowchart).length;
-   stats.textContent = `${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;
-   
-   // Show/hide search container based on whether there are nodes
-   if (nodeCount === 0) {
-       searchContainer.style.display = 'none';
-   } else {
-       searchContainer.style.display = 'block';
-   }
-   
-   // Render the flowchart
-   renderFlowchart();
+    const stats = document.getElementById('flowchart-stats');
+    const searchContainer = document.getElementById('search-container');
+    
+    const nodeCount = Object.keys(flowchart).length;
+    stats.textContent = `${nodeCount} node${nodeCount !== 1 ? 's' : ''}`;
+    
+    // Show/hide search container based on whether there are nodes
+    if (nodeCount === 0) {
+        searchContainer.style.display = 'none';
+    } else {
+        searchContainer.style.display = 'block';
+    }
+    
+    updateNavigateButtonState();
+    
+    // CRITICAL FIX: Only validate positions if we actually have broken data
+    let needsValidation = false;
+    Object.values(flowchart).forEach(node => {
+        if (!node.position || 
+            typeof node.position.x !== 'number' || 
+            typeof node.position.y !== 'number' ||
+            isNaN(node.position.x) || 
+            isNaN(node.position.y)) {
+            needsValidation = true;
+        }
+    });
+    
+    if (needsValidation) {
+        console.log('Some nodes need position validation...');
+        validateAndFixNodePositions();
+    } else {
+        console.log('All node positions are valid, skipping validation');
+    }
+    
+    // Render the flowchart (this should preserve existing positions)
+    renderFlowchart();
 }
 
 // Updated form submission handler
@@ -887,29 +1069,58 @@ document.getElementById('node-form').addEventListener('submit', function(e) {
         return;
     }
     
-    // If editing and ID changed, remove the old node
-    if (editingNodeId && editingNodeId !== nodeId) {
-        delete flowchart[editingNodeId];
-    }
+    // CRITICAL FIX: Preserve existing position when editing
+    let position = null;
     
-    // Generate position for new nodes
-    let position = { x: 100, y: 100 };
-    if (editingNodeId && flowchart[editingNodeId]) {
-        position = flowchart[editingNodeId].position || position;
+    if (editingNodeId && flowchart[editingNodeId] && flowchart[editingNodeId].position) {
+        // EDITING: Keep the exact same position
+        position = { 
+            x: flowchart[editingNodeId].position.x, 
+            y: flowchart[editingNodeId].position.y 
+        };
+        console.log(`Preserving existing position for ${editingNodeId}:`, position);
+        
+        // If ID changed, remove the old node AFTER preserving position
+        if (editingNodeId !== nodeId) {
+            delete flowchart[editingNodeId];
+        }
     } else {
+        // NEW NODE: Generate a new position using proper hierarchy
         position = generateNodePosition();
+        console.log(`Generated new position for ${nodeId}:`, position);
     }
     
+    // Ensure position is valid
+    if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+        position = { x: 150, y: 100 };
+        console.warn('Fallback position used:', position);
+    }
+    
+    console.log(`Final position for ${nodeId}:`, position);
+    
+    // Create/update the node with preserved position
     flowchart[nodeId] = {
         id: nodeId,
         instruction: instruction,
         options: options,
         image: currentImageData,
-        position: position
+        position: { 
+            x: position.x, 
+            y: position.y 
+        }
     };
     
-    console.log('Created node:', flowchart[nodeId]);
+    // Preserve custom size if editing
+    if (editingNodeId && flowchart[editingNodeId] && flowchart[editingNodeId].customSize) {
+        flowchart[nodeId].customSize = { ...flowchart[editingNodeId].customSize };
+    }
     
+    console.log('Created/updated node:', flowchart[nodeId]);
+    
+    console.log('=== POSITION DEBUG ===');
+    console.log('Position in flowchart object:', flowchart[nodeId].position);
+    console.log('All flowchart positions:', Object.fromEntries(Object.entries(flowchart).map(([id, node]) => [id, node.position])));
+    console.log('=== END POSITION DEBUG ===');
     updateFlowchartDisplay();
     resetForm();
     
@@ -920,6 +1131,8 @@ document.getElementById('node-form').addEventListener('submit', function(e) {
     
     console.log('=== FORM SUBMISSION COMPLETE ===');
 });
+
+
 
 // Updated resetForm function
 function resetForm() {
@@ -1040,100 +1253,119 @@ async function exportFlowchart() {
 }
 
 // Enhanced function to save current node positions from DOM to flowchart data
+// REPLACE THE saveCurrentNodePositions FUNCTION (around line 810) WITH THIS:
+
 function saveCurrentNodePositions() {
-   console.log('=== POSITION SAVE DEBUG START ===');
-   
-   Object.keys(flowchart).forEach(nodeId => {
-       const nodeEl = document.getElementById(`node-${nodeId}`);
-       if (nodeEl) {
-           // Get current position from the DOM element
-           const currentLeft = parseInt(nodeEl.style.left) || 0;
-           const currentTop = parseInt(nodeEl.style.top) || 0;
-           
-           console.log(`Node ${nodeId} DOM position:`, {
-               left: nodeEl.style.left,
-               top: nodeEl.style.top,
-               parsedX: currentLeft,
-               parsedY: currentTop
-           });
-           
-           // Ensure position object exists
-           if (!flowchart[nodeId].position) {
-               flowchart[nodeId].position = {};
-           }
-           
-           // Update the flowchart data with current position
-           flowchart[nodeId].position.x = currentLeft;
-           flowchart[nodeId].position.y = currentTop;
-           
-           // Also save custom size if it exists
-           if (nodeEl.style.width && nodeEl.style.height) {
-               if (!flowchart[nodeId].customSize) {
-                   flowchart[nodeId].customSize = {};
-               }
-               flowchart[nodeId].customSize.width = parseInt(nodeEl.style.width);
-               flowchart[nodeId].customSize.height = parseInt(nodeEl.style.height);
-           }
-           
-           console.log(`Updated flowchart[${nodeId}].position:`, flowchart[nodeId].position);
-       } else {
-           console.warn(`Node element not found: node-${nodeId}`);
-       }
-   });
-   
-   console.log('=== POSITION SAVE DEBUG END ===');
+    console.log('=== SAVING CURRENT NODE POSITIONS ===');
+    
+    Object.keys(flowchart).forEach(nodeId => {
+        const nodeEl = document.getElementById(`node-${nodeId}`);
+        if (nodeEl) {
+            const currentLeft = parseInt(nodeEl.style.left) || 0;
+            const currentTop = parseInt(nodeEl.style.top) || 0;
+            
+            console.log(`Saving position for ${nodeId}: x=${currentLeft}, y=${currentTop}`);
+            
+            // CRITICAL: Ensure position object exists
+            if (!flowchart[nodeId].position) {
+                flowchart[nodeId].position = {};
+            }
+            
+            // Update the flowchart data directly
+            flowchart[nodeId].position.x = currentLeft;
+            flowchart[nodeId].position.y = currentTop;
+            
+            // Also save custom size if it exists
+            if (nodeEl.style.width && nodeEl.style.height && 
+                nodeEl.style.width !== 'fit-content' && nodeEl.style.width !== 'auto') {
+                if (!flowchart[nodeId].customSize) {
+                    flowchart[nodeId].customSize = {};
+                }
+                flowchart[nodeId].customSize.width = parseInt(nodeEl.style.width);
+                flowchart[nodeId].customSize.height = parseInt(nodeEl.style.height);
+            }
+        } else {
+            console.warn(`Node element not found: node-${nodeId}`);
+            // Ensure position exists with defaults even if DOM element missing
+            if (!flowchart[nodeId].position) {
+                flowchart[nodeId].position = { x: 100, y: 100 };
+                console.log(`Added default position for ${nodeId}`);
+            }
+        }
+    });
+    
+    console.log('=== POSITION SAVE COMPLETE ===');
+    console.log('Current flowchart positions:', 
+        Object.fromEntries(Object.entries(flowchart).map(([id, node]) => [id, node.position]))
+    );
 }
 
-// Enhanced import function with position debugging
+
+
+// REPLACE the importFlowchart function (around line 850) with this:
 function importFlowchart(event) {
-   const file = event.target.files[0];
-   if (!file) return;
-   
-   const reader = new FileReader();
-   reader.onload = function(e) {
-       try {
-           const importedFlowchart = JSON.parse(e.target.result);
-           
-           console.log('=== IMPORT DEBUG START ===');
-           console.log('Imported flowchart:', importedFlowchart);
-           
-           // Validate the imported data
-           if (typeof importedFlowchart !== 'object' || importedFlowchart === null) {
-               throw new Error('Invalid flowchart format - must be a valid JSON object');
-           }
-           
-           // Additional validation to ensure it has the right structure
-           for (let nodeId in importedFlowchart) {
-               const node = importedFlowchart[nodeId];
-               if (!node.id || !node.instruction || !Array.isArray(node.options)) {
-                   throw new Error(`Invalid node structure for "${nodeId}"`);
-               }
-               
-               // Log position data for debugging
-               console.log(`Node ${nodeId} imported position:`, node.position);
-           }
-           
-           // Set the flowchart data
-           flowchart = importedFlowchart;
-           
-           console.log('Final flowchart after import:', JSON.parse(JSON.stringify(flowchart)));
-           console.log('=== IMPORT DEBUG END ===');
-           
-           // Update the display (this should use the imported positions)
-           updateFlowchartDisplay();
-           resetForm();
-           
-           alert('Flowchart imported successfully!');
-           
-       } catch (error) {
-           alert('Error importing flowchart: ' + error.message);
-           console.error('Import error:', error);
-       }
-   };
-   reader.readAsText(file);
-   
-   // Clear the file input so the same file can be imported again if needed
-   event.target.value = '';
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedFlowchart = JSON.parse(e.target.result);
+            
+            console.log('=== IMPORT DEBUG START ===');
+            console.log('Imported flowchart:', importedFlowchart);
+            
+            // Validate the imported data
+            if (typeof importedFlowchart !== 'object' || importedFlowchart === null) {
+                throw new Error('Invalid flowchart format - must be a valid JSON object');
+            }
+            
+            // Additional validation to ensure it has the right structure
+            for (let nodeId in importedFlowchart) {
+                const node = importedFlowchart[nodeId];
+                if (!node.id || !node.instruction || !Array.isArray(node.options)) {
+                    throw new Error(`Invalid node structure for "${nodeId}"`);
+                }
+                
+                // Log position data for debugging
+                console.log(`Node ${nodeId} imported position:`, node.position);
+                
+                // CRITICAL FIX: Ensure position is preserved during import
+                if (!node.position || 
+                    typeof node.position.x !== 'number' || 
+                    typeof node.position.y !== 'number') {
+                    console.warn(`Node ${nodeId} missing position, creating default`);
+                    const nodeIndex = Object.keys(importedFlowchart).indexOf(nodeId);
+                    node.position = {
+                        x: 150 + (nodeIndex % 3) * 300,
+                        y: 100 + Math.floor(nodeIndex / 3) * 250
+                    };
+                }
+            }
+            
+            // Set the flowchart data - PRESERVE the imported positions exactly
+            flowchart = JSON.parse(JSON.stringify(importedFlowchart));
+            
+            console.log('Final flowchart after import with positions:', 
+                Object.fromEntries(Object.entries(flowchart).map(([id, node]) => [id, node.position]))
+            );
+            console.log('=== IMPORT DEBUG END ===');
+            
+            // Update the display WITHOUT calling functions that might reset positions
+            updateFlowchartDisplay();
+            resetForm();
+            
+            alert('Flowchart imported successfully!');
+            
+        } catch (error) {
+            alert('Error importing flowchart: ' + error.message);
+            console.error('Import error:', error);
+        }
+    };
+    reader.readAsText(file);
+    
+    // Clear the file input so the same file can be imported again if needed
+    event.target.value = '';
 }
 
 // Enhanced custom save dialog with better Chrome support
@@ -1435,11 +1667,13 @@ function showExportSuccess(message = 'Flowchart exported successfully!') {
 }
 
 
+// Replace your existing clearFlowchart function with this:
 function clearFlowchart() {
    if (confirm('Are you sure you want to clear all nodes? This cannot be undone.')) {
        flowchart = {};
        updateFlowchartDisplay();
        resetForm();
+       updateNavigateButtonState(); // Add this line
    }
 }
 
@@ -1834,91 +2068,6 @@ function autoLayoutNodes() {
    updateFlowchartDisplay();
 }
 
-// Canvas zoom and pan functionality
-function setupCanvasControls() {
-    const canvas = document.getElementById('flowchart-canvas');
-    
-    // Add main control buttons (existing functionality)
-    const controls = document.createElement('div');
-    controls.className = 'canvas-controls';
-    
-    const autoLayoutBtn = document.createElement('button');
-    autoLayoutBtn.className = 'btn btn-secondary';
-    autoLayoutBtn.textContent = '📐 Auto Layout';
-    autoLayoutBtn.onclick = autoLayoutNodes;
-    
-    const fitBtn = document.createElement('button');
-    fitBtn.className = 'btn btn-secondary';
-    fitBtn.textContent = '🔍 Fit to View';
-    fitBtn.onclick = fitToView;
-    
-    const resetZoomBtn = document.createElement('button');
-    resetZoomBtn.className = 'btn btn-secondary';
-    resetZoomBtn.textContent = '🎯 Reset Zoom';
-    resetZoomBtn.onclick = resetCanvasZoom;
-    
-    controls.appendChild(autoLayoutBtn);
-    controls.appendChild(fitBtn);
-    controls.appendChild(resetZoomBtn);
-    canvas.appendChild(controls);
-    
-    // Add zoom controls
-    setupZoomControls(canvas);
-    
-    // Add zoom event listeners
-    setupZoomEventListeners(canvas);
-}
-
-function fitToView() {
-    const canvas = document.getElementById('flowchart-canvas');
-    const nodes = Object.values(flowchart);
-    
-    if (nodes.length === 0) {
-        resetCanvasZoom();
-        return;
-    }
-    
-    // Calculate bounding box of all nodes
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
-    nodes.forEach(node => {
-        if (node.position) {
-            const nodeWidth = node.customSize?.width || 350;
-            const nodeHeight = node.customSize?.height || 200;
-            minX = Math.min(minX, node.position.x);
-            minY = Math.min(minY, node.position.y);
-            maxX = Math.max(maxX, node.position.x + nodeWidth);
-            maxY = Math.max(maxY, node.position.y + nodeHeight);
-        }
-    });
-    
-    // Add padding
-    const padding = 50;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
-    
-    // Calculate required scale to fit content
-    const canvasRect = canvas.getBoundingClientRect();
-    const contentWidth = maxX - minX;
-    const contentHeight = maxY - minY;
-    
-    const scaleX = (canvasRect.width - 40) / contentWidth; // Account for canvas padding
-    const scaleY = (canvasRect.height - 40) / contentHeight;
-    const scale = Math.min(scaleX, scaleY, canvasZoom.maxScale);
-    
-    // Center the content
-    const scaledWidth = contentWidth * scale;
-    const scaledHeight = contentHeight * scale;
-    
-    canvasZoom.scale = Math.max(canvasZoom.minScale, scale);
-    canvasZoom.panX = (canvasRect.width - scaledWidth) / 2 - minX * scale;
-    canvasZoom.panY = (canvasRect.height - scaledHeight) / 2 - minY * scale;
-    
-    applyCanvasTransform();
-    updateZoomDisplay();
-}
 
 // Function to convert URLs in text to clickable links
 function linkifyText(text) {
@@ -1936,72 +2085,16 @@ function linkifyText(text) {
    });
 }
 
-// Initialize
-updateFlowchartDisplay();
+// ADD THIS FUNCTION after the linkifyText function (around line 1070):
 
-// Setup search event listeners when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-   setupSearchEventListeners();
-   setupCanvasControls();
-});
-
-// Also setup listeners immediately in case DOM is already loaded
-if (document.readyState === 'loading') {
-   document.addEventListener('DOMContentLoaded', function() {
-       setupSearchEventListeners();
-       setupCanvasControls();
-   });
-} else {
-   setupSearchEventListeners();
-   setupCanvasControls();
-}
-// Enhanced Canvas Zoom and Pan Functionality
-let canvasZoom = {
-    scale: 1.0,
-    minScale: 0.1,
-    maxScale: 3.0,
-    step: 0.1,
-    panX: 0,
-    panY: 0,
-    isPanning: false,
-    startPan: { x: 0, y: 0 },
-    startOffset: { x: 0, y: 0 }
-};
-
-// Enhanced setupCanvasControls with zoom functionality
 function setupCanvasControls() {
     const canvas = document.getElementById('flowchart-canvas');
-    
-    // Add main control buttons (existing functionality)
-    const controls = document.createElement('div');
-    controls.className = 'canvas-controls';
-    
-    const autoLayoutBtn = document.createElement('button');
-    autoLayoutBtn.className = 'btn btn-secondary';
-    autoLayoutBtn.textContent = '📐 Auto Layout';
-    autoLayoutBtn.onclick = autoLayoutNodes;
-    
-    const fitBtn = document.createElement('button');
-    fitBtn.className = 'btn btn-secondary';
-    fitBtn.textContent = '🔍 Fit to View';
-    fitBtn.onclick = fitToView;
-    
-    const resetZoomBtn = document.createElement('button');
-    resetZoomBtn.className = 'btn btn-secondary';
-    resetZoomBtn.textContent = '🎯 Reset Zoom';
-    resetZoomBtn.onclick = resetCanvasZoom;
-    
-    controls.appendChild(autoLayoutBtn);
-    controls.appendChild(fitBtn);
-    controls.appendChild(resetZoomBtn);
-    canvas.appendChild(controls);
-    
-    // Add zoom controls
-    setupZoomControls(canvas);
-    
-    // Add zoom event listeners
-    setupZoomEventListeners(canvas);
+    if (canvas && !canvas.querySelector('.canvas-zoom-controls')) {
+        setupZoomControls(canvas);
+        setupZoomEventListeners(canvas);
+    }
 }
+// Add these functions to your main.js file (after linkifyText function):
 
 function setupZoomControls(canvas) {
     // Create zoom controls container
@@ -2055,87 +2148,6 @@ function setupZoomEventListeners(canvas) {
             zoomCanvasAtPoint(delta, mouseX, mouseY);
         }
     }, { passive: false });
-    
-    // Touch/gesture zoom support for mobile
-    let initialDistance = 0;
-    let initialScale = 1;
-    
-    canvas.addEventListener('touchstart', function(e) {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            initialDistance = Math.hypot(
-                touch2.clientX - touch1.clientX,
-                touch2.clientY - touch1.clientY
-            );
-            initialScale = canvasZoom.scale;
-        }
-    }, { passive: false });
-    
-    canvas.addEventListener('touchmove', function(e) {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            const touch1 = e.touches[0];
-            const touch2 = e.touches[1];
-            const currentDistance = Math.hypot(
-                touch2.clientX - touch1.clientX,
-                touch2.clientY - touch1.clientY
-            );
-            
-            const scale = (currentDistance / initialDistance) * initialScale;
-            const clampedScale = Math.max(canvasZoom.minScale, Math.min(canvasZoom.maxScale, scale));
-            
-            setCanvasZoom(clampedScale);
-        }
-    }, { passive: false });
-    
-    // Pan functionality with middle mouse button or space+drag
-    let isSpacePressed = false;
-    
-    document.addEventListener('keydown', function(e) {
-    if (e.code === 'Space' && !e.repeat && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        isSpacePressed = true;
-        canvas.style.cursor = 'grab';
-    }
-    });
-    
-    document.addEventListener('keyup', function(e) {
-        if (e.code === 'Space') {
-            isSpacePressed = false;
-            canvas.style.cursor = '';
-            canvasZoom.isPanning = false;
-        }
-    });
-    
-    canvas.addEventListener('mousedown', function(e) {
-        if (e.button === 1 || (e.button === 0 && isSpacePressed)) { // Middle mouse or space+left mouse
-            e.preventDefault();
-            canvasZoom.isPanning = true;
-            canvasZoom.startPan = { x: e.clientX, y: e.clientY };
-            canvasZoom.startOffset = { x: canvasZoom.panX, y: canvasZoom.panY };
-            canvas.style.cursor = 'grabbing';
-        }
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-        if (canvasZoom.isPanning) {
-            const deltaX = e.clientX - canvasZoom.startPan.x;
-            const deltaY = e.clientY - canvasZoom.startPan.y;
-            
-            canvasZoom.panX = canvasZoom.startOffset.x + deltaX;
-            canvasZoom.panY = canvasZoom.startOffset.y + deltaY;
-            
-            applyCanvasTransform();
-        }
-    });
-    
-    document.addEventListener('mouseup', function(e) {
-        if (canvasZoom.isPanning) {
-            canvasZoom.isPanning = false;
-            canvas.style.cursor = isSpacePressed ? 'grab' : '';
-        }
-    });
 }
 
 function zoomCanvas(delta) {
@@ -2213,232 +2225,63 @@ function resetCanvasZoom() {
     applyCanvasTransform();
     updateZoomDisplay();
 }
+// Initialize
+updateFlowchartDisplay();
 
-// Enhanced fitToView with zoom consideration
-function fitToView() {
-    const canvas = document.getElementById('flowchart-canvas');
-    const nodes = Object.values(flowchart);
-    
-    if (nodes.length === 0) {
-        resetCanvasZoom();
-        return;
-    }
-    
-    // Calculate bounding box of all nodes
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    
-    nodes.forEach(node => {
-        if (node.position) {
-            const nodeWidth = node.customSize?.width || 350;
-            const nodeHeight = node.customSize?.height || 200;
-            minX = Math.min(minX, node.position.x);
-            minY = Math.min(minY, node.position.y);
-            maxX = Math.max(maxX, node.position.x + nodeWidth);
-            maxY = Math.max(maxY, node.position.y + nodeHeight);
-        }
-    });
-    
-    // Add padding
-    const padding = 50;
-    minX -= padding;
-    minY -= padding;
-    maxX += padding;
-    maxY += padding;
-    
-    // Calculate required scale to fit content
-    const canvasRect = canvas.getBoundingClientRect();
-    const contentWidth = maxX - minX;
-    const contentHeight = maxY - minY;
-    
-    const scaleX = (canvasRect.width - 40) / contentWidth; // Account for canvas padding
-    const scaleY = (canvasRect.height - 40) / contentHeight;
-    const scale = Math.min(scaleX, scaleY, canvasZoom.maxScale);
-    
-    // Center the content
-    const scaledWidth = contentWidth * scale;
-    const scaledHeight = contentHeight * scale;
-    
-    canvasZoom.scale = Math.max(canvasZoom.minScale, scale);
-    canvasZoom.panX = (canvasRect.width - scaledWidth) / 2 - minX * scale;
-    canvasZoom.panY = (canvasRect.height - scaledHeight) / 2 - minY * scale;
-    
-    applyCanvasTransform();
-    updateZoomDisplay();
-}
-
-// Enhanced node dragging that works with zoom and pan
-function setupNodeDrag(nodeEl, node) {
-    let isDragging = false;
-    let startPos = { x: 0, y: 0 };
-    let startNodePos = { x: 0, y: 0 };
-    
-    nodeEl.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-            return; // Don't drag when clicking buttons
-        }
-        
-        // Don't start dragging if we're panning
-        if (canvasZoom.isPanning || e.button === 1) {
-            return;
-        }
-        
-        isDragging = true;
-        startPos = { x: e.clientX, y: e.clientY };
-        startNodePos = { 
-            x: node.position?.x || 100, 
-            y: node.position?.y || 100 
-        };
-        
-        nodeEl.style.zIndex = '1000';
-        nodeEl.style.opacity = '0.8';
-        nodeEl.style.transform = 'scale(1.05)';
-        
-        e.preventDefault();
-        e.stopPropagation();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        
-        // Calculate movement in canvas coordinates (accounting for zoom)
-        const deltaX = (e.clientX - startPos.x) / canvasZoom.scale;
-        const deltaY = (e.clientY - startPos.y) / canvasZoom.scale;
-        
-        const newX = Math.max(0, startNodePos.x + deltaX);
-        const newY = Math.max(0, startNodePos.y + deltaY);
-        
-        // Update DOM position
-        nodeEl.style.left = `${newX}px`;
-        nodeEl.style.top = `${newY}px`;
-        
-        // Update position in BOTH the node reference AND the main flowchart object
-        if (!node.position) node.position = {};
-        node.position.x = newX;
-        node.position.y = newY;
-        
-        // CRITICAL: Also update the main flowchart object
-        if (flowchart[node.id]) {
-            if (!flowchart[node.id].position) flowchart[node.id].position = {};
-            flowchart[node.id].position.x = newX;
-            flowchart[node.id].position.y = newY;
-        }
-        
-        // Canvas expansion logic (keeping existing code but with zoom support)
-        const content = document.getElementById('flowchart-content');
-        const nodeWidth = node.customSize?.width || 350;
-        const nodeHeight = node.customSize?.height || 200;
-        
-        const requiredWidth = newX + nodeWidth + 200;
-        const requiredHeight = newY + nodeHeight + 200;
-        
-        // Get current dimensions without transform to avoid interference
-        const currentTransform = content.style.transform;
-        content.style.transform = 'none';
-        const currentWidth = parseInt(content.style.width) || 1500;
-        const currentHeight = parseInt(content.style.height) || 1000;
-        content.style.transform = currentTransform;
-        
-        if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
-            const newCanvasWidth = Math.max(requiredWidth, currentWidth);
-            const newCanvasHeight = Math.max(requiredHeight, currentHeight);
-            
-            content.style.width = `${newCanvasWidth}px`;
-            content.style.height = `${newCanvasHeight}px`;
-            content.style.minWidth = `${newCanvasWidth}px`;
-            content.style.minHeight = `${newCanvasHeight}px`;
-            
-            const svg = content.querySelector('svg');
-            if (svg) {
-                svg.style.width = `${newCanvasWidth}px`;
-                svg.style.height = `${newCanvasHeight}px`;
-            }
-            
-            const nodeContainer = content.children[1];
-            if (nodeContainer) {
-                nodeContainer.style.width = `${newCanvasWidth}px`;
-                nodeContainer.style.height = `${newCanvasHeight}px`;
-            }
-        }
-        
-        // Re-render connections
-        const svg = document.querySelector('#flowchart-content svg');
-        if (svg) {
-            renderConnections(svg);
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        nodeEl.style.zIndex = '2';
-        nodeEl.style.opacity = '1';
-        nodeEl.style.transform = 'scale(1)';
-        
-        // Final position save when drag ends
-        const finalX = parseInt(nodeEl.style.left) || 0;
-        const finalY = parseInt(nodeEl.style.top) || 0;
-        
-        // Triple-save to ensure position is stored everywhere
-        if (!node.position) node.position = {};
-        node.position.x = finalX;
-        node.position.y = finalY;
-        
-        if (flowchart[node.id]) {
-            if (!flowchart[node.id].position) flowchart[node.id].position = {};
-            flowchart[node.id].position.x = finalX;
-            flowchart[node.id].position.y = finalY;
-        }
-    });
-}
-
-// Enhanced keyboard shortcuts
-document.addEventListener('keydown', function(e) {
-    // Only handle shortcuts when not typing in inputs
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-    }
-    
-    switch(e.key) {
-        case '=':
-        case '+':
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                zoomCanvas(canvasZoom.step);
-            }
-            break;
-        case '-':
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                zoomCanvas(-canvasZoom.step);
-            }
-            break;
-        case '0':
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                resetCanvasZoom();
-            }
-            break;
-        case 'f':
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                fitToView();
-            }
-            break;
-    }
-});
-
-// Initialize zoom when the page loads
+// Setup everything when the page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Reset zoom state on page load
-    canvasZoom.scale = 1.0;
-    canvasZoom.panX = 0;
-    canvasZoom.panY = 0;
+    setupSearchEventListeners();
+    setupCanvasControls();
+    
+    // Initialize navigate button state
+    updateNavigateButtonState();
+    
+    // Add click handler for the navigate button with proper validation
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        // Remove the onclick attribute to avoid conflicts
+        navigateBtn.removeAttribute('onclick');
+        
+        navigateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!isNavigationAvailable()) {
+                alert('Please create some nodes first before navigating your flowchart.');
+                return false;
+            }
+            // If we have nodes, proceed with navigation
+            switchMode('navigate');
+        });
+    }
 });
 
-// Also initialize immediately if DOM is already loaded
+// Also setup listeners immediately in case DOM is already loaded
 if (document.readyState !== 'loading') {
-    canvasZoom.scale = 1.0;
-    canvasZoom.panX = 0;
-    canvasZoom.panY = 0;
+    setupSearchEventListeners();
+    setupCanvasControls();
+    updateNavigateButtonState();
+    
+    // Add click handler for the navigate button
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        navigateBtn.removeAttribute('onclick');
+        
+        navigateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!isNavigationAvailable()) {
+                alert('Please create some nodes first before navigating your flowchart.');
+                return false;
+            }
+            switchMode('navigate');
+        });
+    }
 }
+// Automatic position saving every 10 seconds
+setInterval(() => {
+    if (Object.keys(flowchart).length > 0) {
+        saveCurrentNodePositions();
+    }
+}, 10000);

@@ -3,50 +3,105 @@
     "id": "start",
     "instruction": "You found a mysterious Tupperware in the fridge. Open it?",
     "options": [
-      { "label": "Yes, I'm brave", "nextNodeId": "sniff-test" },
-      { "label": "Nope", "nextNodeId": "chicken-out" }
-    ]
+      {
+        "label": "Yes, I'm brave",
+        "nextNodeId": "sniff-test"
+      },
+      {
+        "label": "Nope",
+        "nextNodeId": "chicken-out"
+      }
+    ],
+    "position": {
+      "x": 15,
+      "y": 18
+    }
   },
   "sniff-test": {
     "id": "sniff-test",
     "instruction": "It smells... like regret. Proceed?",
     "options": [
-      { "label": "I’ve eaten worse", "nextNodeId": "taste-test" },
-      { "label": "Abort mission", "nextNodeId": "bin-it" }
-    ]
+      {
+        "label": "I’ve eaten worse",
+        "nextNodeId": "taste-test"
+      },
+      {
+        "label": "Abort mission",
+        "nextNodeId": "bin-it"
+      }
+    ],
+    "position": {
+      "x": 114,
+      "y": 311
+    }
   },
   "taste-test": {
     "id": "taste-test",
     "instruction": "You took a bite. The flavor is... indescribable. Keep eating?",
     "options": [
-      { "label": "Deliciously dangerous", "nextNodeId": "hospital-time" },
-      { "label": "I value my intestines", "nextNodeId": "bin-it" }
-    ]
+      {
+        "label": "Deliciously dangerous",
+        "nextNodeId": "hospital-time"
+      },
+      {
+        "label": "I value my intestines",
+        "nextNodeId": "bin-it"
+      }
+    ],
+    "position": {
+      "x": 750,
+      "y": 100
+    }
   },
   "bin-it": {
     "id": "bin-it",
     "instruction": "You toss it. The mold colony thanks you for releasing it.",
     "options": [
-      { "label": "Back to Uber Eats", "nextNodeId": "end" }
-    ]
+      {
+        "label": "Back to Uber Eats",
+        "nextNodeId": "end"
+      }
+    ],
+    "position": {
+      "x": 116,
+      "y": 609
+    }
   },
   "chicken-out": {
     "id": "chicken-out",
     "instruction": "You pretend you never saw it. But it saw you.",
     "options": [
-      { "label": "Run away", "nextNodeId": "end" }
-    ]
+      {
+        "label": "Run away",
+        "nextNodeId": "end"
+      }
+    ],
+    "position": {
+      "x": 462,
+      "y": 346
+    }
   },
   "hospital-time": {
     "id": "hospital-time",
     "instruction": "Congrats. You now have a starring role in 'Mystery Meal: ER Edition.'",
     "options": [
-      { "label": "Call mom", "nextNodeId": "end" }
-    ]
+      {
+        "label": "Call mom",
+        "nextNodeId": "end"
+      }
+    ],
+    "position": {
+      "x": 939,
+      "y": 469
+    }
   },
   "end": {
     "id": "end",
     "instruction": "End of the road. Hopefully not the digestive tract.",
-    "options": []
+    "options": [],
+    "position": {
+      "x": 431,
+      "y": 820
+    }
   }
 }
