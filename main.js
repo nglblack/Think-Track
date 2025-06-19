@@ -641,14 +641,7 @@ function renderNode(node, container) {
     
     nodeEl.appendChild(actions);
     
-    // CRITICAL FIX: Setup appropriate interaction handlers based on device
-    if (window.innerWidth <= 768) {
-        // Mobile: Use touch handlers (handled globally)
-        setupMobileNodeInteraction(nodeEl, mainNodeData);
-    } else {
-        // Desktop: Use mouse drag handlers
-        setupDesktopNodeDrag(nodeEl, mainNodeData);
-    }
+// Interactions are handled globally by the unified system - no per-node setup needed
     
     container.appendChild(nodeEl);
     
@@ -657,287 +650,7 @@ function renderNode(node, container) {
     console.log(`Node ${node.id} stored position:`, mainNodeData.position);
 }
 
-// NEW FUNCTION: Setup mobile node interaction (touch-based)
-function setupMobileNodeInteraction(nodeEl, node) {
-    // Add visual feedback classes
-    nodeEl.addEventListener('touchstart', function(e) {
-        if (e.touches.length === 1) {
-            nodeEl.style.transform = 'scale(0.98)';
-            nodeEl.style.transition = 'transform 0.1s ease';
-        }
-    }, { passive: true });
-    
-    nodeEl.addEventListener('touchend', function() {
-        setTimeout(() => {
-            if (!nodeEl.classList.contains('mobile-selected')) {
-                nodeEl.style.transform = 'scale(1)';
-                nodeEl.style.transition = '';
-            }
-        }, 100);
-    }, { passive: true });
-    
-    // Prevent context menu
-    nodeEl.addEventListener('contextmenu', (e) => e.preventDefault());
-}
 
-// NEW FUNCTION: Setup desktop node drag (mouse-based) - replaces old setupNodeDrag
-function setupDesktopNodeDrag(nodeEl, node) {
-    let isDragging = false;
-    let startPos = { x: 0, y: 0 };
-    let startNodePos = { x: 0, y: 0 };
-    
-    nodeEl.addEventListener('mousedown', (e) => {
-        // Only handle mouse events on desktop
-        if (window.innerWidth <= 768) return;
-        
-        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-            return; // Don't drag when clicking buttons
-        }
-        
-        isDragging = true;
-        startPos = { x: e.clientX, y: e.clientY };
-        
-        // Get from main flowchart object
-        const mainNode = flowchart[node.id];
-        if (!mainNode.position) {
-            mainNode.position = { x: 100, y: 100 };
-        }
-        
-        startNodePos = { 
-            x: mainNode.position.x, 
-            y: mainNode.position.y 
-        };
-        
-        nodeEl.style.zIndex = '1000';
-        nodeEl.style.opacity = '0.8';
-        nodeEl.style.transform = 'scale(1.05)';
-        
-        console.log(`Started dragging ${node.id} from position:`, startNodePos);
-        
-        e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging || window.innerWidth <= 768) return;
-        
-        const dx = e.clientX - startPos.x;
-        const dy = e.clientY - startPos.y;
-        
-        const newX = Math.max(0, startNodePos.x + dx);
-        const newY = Math.max(0, startNodePos.y + dy);
-        
-        // Update DOM position immediately
-        nodeEl.style.left = `${newX}px`;
-        nodeEl.style.top = `${newY}px`;
-        
-        // Update main flowchart object position properties
-        const mainNode = flowchart[node.id];
-        if (!mainNode.position) {
-            mainNode.position = { x: newX, y: newY };
-        } else {
-            mainNode.position.x = newX;
-            mainNode.position.y = newY;
-        }
-        
-        console.log(`Dragging ${node.id} to:`, { x: newX, y: newY });
-        
-        // Canvas expansion logic
-        const content = document.getElementById('flowchart-content');
-        const nodeWidth = mainNode.customSize?.width || 350;
-        const nodeHeight = mainNode.customSize?.height || 200;
-        
-        const requiredWidth = newX + nodeWidth + 200;
-        const requiredHeight = newY + nodeHeight + 200;
-        
-        const currentWidth = parseInt(content.style.width) || 1500;
-        const currentHeight = parseInt(content.style.height) || 1000;
-        
-        if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
-            const newCanvasWidth = Math.max(requiredWidth, currentWidth);
-            const newCanvasHeight = Math.max(requiredHeight, currentHeight);
-            
-            content.style.width = `${newCanvasWidth}px`;
-            content.style.height = `${newCanvasHeight}px`;
-            content.style.minWidth = `${newCanvasWidth}px`;
-            content.style.minHeight = `${newCanvasHeight}px`;
-            
-            const svg = content.querySelector('svg');
-            if (svg) {
-                svg.style.width = `${newCanvasWidth}px`;
-                svg.style.height = `${newCanvasHeight}px`;
-            }
-            
-            const nodeContainer = content.children[1];
-            if (nodeContainer) {
-                nodeContainer.style.width = `${newCanvasWidth}px`;
-                nodeContainer.style.height = `${newCanvasHeight}px`;
-            }
-        }
-        
-        // Re-render connections
-        const svg = document.querySelector('#flowchart-content svg');
-        if (svg) {
-            renderConnections(svg);
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        if (!isDragging || window.innerWidth <= 768) return;
-        
-        isDragging = false;
-        nodeEl.style.zIndex = '2';
-        nodeEl.style.opacity = '1';
-        nodeEl.style.transform = 'scale(1)';
-        
-        // Get final position from DOM and save to main object
-        const finalX = parseInt(nodeEl.style.left) || 0;
-        const finalY = parseInt(nodeEl.style.top) || 0;
-        
-        const mainNode = flowchart[node.id];
-        if (!mainNode.position) {
-            mainNode.position = { x: finalX, y: finalY };
-        } else {
-            mainNode.position.x = finalX;
-            mainNode.position.y = finalY;
-        }
-        
-        console.log(`FINAL position for ${node.id}:`, mainNode.position);
-        
-        // Verify the position is properly saved
-        setTimeout(() => {
-            console.log(`VERIFIED position for ${node.id}:`, flowchart[node.id].position);
-        }, 100);
-    });
-}
-
-// Enhanced setupNodeDrag with better position tracking
-
-function setupNodeDrag(nodeEl, node) {
-    let isDragging = false;
-    let startPos = { x: 0, y: 0 };
-    let startNodePos = { x: 0, y: 0 };
-    
-    nodeEl.addEventListener('mousedown', (e) => {
-        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
-            return; // Don't drag when clicking buttons
-        }
-        
-        isDragging = true;
-        startPos = { x: e.clientX, y: e.clientY };
-        
-        // CRITICAL FIX: Ensure position exists and get from main flowchart object
-        const mainNode = flowchart[node.id];
-        if (!mainNode.position) {
-            mainNode.position = { x: 100, y: 100 };
-        }
-        
-        startNodePos = { 
-            x: mainNode.position.x, 
-            y: mainNode.position.y 
-        };
-        
-        nodeEl.style.zIndex = '1000';
-        nodeEl.style.opacity = '0.8';
-        nodeEl.style.transform = 'scale(1.05)';
-        
-        console.log(`Started dragging ${node.id} from position:`, startNodePos);
-        
-        e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        
-        const dx = e.clientX - startPos.x;
-        const dy = e.clientY - startPos.y;
-        
-        const newX = Math.max(0, startNodePos.x + dx);
-        const newY = Math.max(0, startNodePos.y + dy);
-        
-        // Update DOM position immediately
-        nodeEl.style.left = `${newX}px`;
-        nodeEl.style.top = `${newY}px`;
-        
-        // CRITICAL FIX: Update ONLY the main flowchart object position properties
-        const mainNode = flowchart[node.id];
-        if (!mainNode.position) {
-            mainNode.position = { x: newX, y: newY };
-        } else {
-            mainNode.position.x = newX;
-            mainNode.position.y = newY;
-        }
-        
-        console.log(`Dragging ${node.id} to:`, { x: newX, y: newY });
-        console.log(`Main flowchart position:`, mainNode.position);
-        
-        // Canvas expansion logic
-        const content = document.getElementById('flowchart-content');
-        const nodeWidth = mainNode.customSize?.width || 350;
-        const nodeHeight = mainNode.customSize?.height || 200;
-        
-        const requiredWidth = newX + nodeWidth + 200;
-        const requiredHeight = newY + nodeHeight + 200;
-        
-        const currentWidth = parseInt(content.style.width) || 1500;
-        const currentHeight = parseInt(content.style.height) || 1000;
-        
-        if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
-            const newCanvasWidth = Math.max(requiredWidth, currentWidth);
-            const newCanvasHeight = Math.max(requiredHeight, currentHeight);
-            
-            content.style.width = `${newCanvasWidth}px`;
-            content.style.height = `${newCanvasHeight}px`;
-            content.style.minWidth = `${newCanvasWidth}px`;
-            content.style.minHeight = `${newCanvasHeight}px`;
-            
-            const svg = content.querySelector('svg');
-            if (svg) {
-                svg.style.width = `${newCanvasWidth}px`;
-                svg.style.height = `${newCanvasHeight}px`;
-            }
-            
-            const nodeContainer = content.children[1];
-            if (nodeContainer) {
-                nodeContainer.style.width = `${newCanvasWidth}px`;
-                nodeContainer.style.height = `${newCanvasHeight}px`;
-            }
-        }
-        
-        // Re-render connections
-        const svg = document.querySelector('#flowchart-content svg');
-        if (svg) {
-            renderConnections(svg);
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        if (!isDragging) return;
-        
-        isDragging = false;
-        nodeEl.style.zIndex = '2';
-        nodeEl.style.opacity = '1';
-        nodeEl.style.transform = 'scale(1)';
-        
-        // CRITICAL FIX: Get final position from DOM and save to main object
-        const finalX = parseInt(nodeEl.style.left) || 0;
-        const finalY = parseInt(nodeEl.style.top) || 0;
-        
-        const mainNode = flowchart[node.id];
-        if (!mainNode.position) {
-            mainNode.position = { x: finalX, y: finalY };
-        } else {
-            mainNode.position.x = finalX;
-            mainNode.position.y = finalY;
-        }
-        
-        console.log(`FINAL position for ${node.id}:`, mainNode.position);
-        
-        // Verify the position is properly saved
-        setTimeout(() => {
-            console.log(`VERIFIED position for ${node.id}:`, flowchart[node.id].position);
-        }, 100);
-    });
-}
 
 
 function renderConnections(svg) {
@@ -1150,7 +863,8 @@ function createConnectionLine(start, end, label) {
    return group;
 }
 
-// REPLACE the updateFlowchartDisplay function (around line 700) with this:
+// REPLACE THE ENTIRE updateFlowchartDisplay FUNCTION with this:
+
 function updateFlowchartDisplay() {
     const stats = document.getElementById('flowchart-stats');
     const searchContainer = document.getElementById('search-container');
@@ -1188,6 +902,11 @@ function updateFlowchartDisplay() {
     
     // Render the flowchart (this should preserve existing positions)
     renderFlowchart();
+    
+    // Re-initialize interaction system after flowchart update
+    setTimeout(() => {
+        initializeNodeInteractions();
+    }, 100);
 }
 
 // Updated form submission handler
@@ -2639,111 +2358,19 @@ function deleteSelectedMobileNode() {
         deselectMobileNode();
     }
 }
-
-// Enhanced mobile touch handling
-// REPLACE the setupMobileNodeInteractions function (around line 1250) with this:
-function setupMobileNodeInteractions() {
-    // Only setup if on mobile
-    if (window.innerWidth > 768) return;
-    
-    // Remove existing listeners to avoid duplicates
-    document.removeEventListener('touchstart', handleMobileTouchStart);
-    document.removeEventListener('touchmove', handleMobileTouchMove);
-    document.removeEventListener('touchend', handleMobileTouchEnd);
-    
-    // Add touch event listeners ONLY for mobile
-    document.addEventListener('touchstart', handleMobileTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleMobileTouchMove, { passive: false });
-    document.addEventListener('touchend', handleMobileTouchEnd, { passive: false });
-}
-
-let touchStartTime = 0;
-let touchMoved = false;
-let touchStartPos = { x: 0, y: 0 };
-let isDragging = false;
-
-function handleMobileTouchStart(e) {
-    if (window.innerWidth > 768) return; // Only on mobile
-    
-    const target = e.target.closest('.flowchart-node');
-    if (!target) {
-        deselectMobileNode();
-        return;
+// ADD this function to make mobile selection work:
+function clearMobileSelection() {
+    const previousSelected = document.querySelector('.flowchart-node.mobile-selected');
+    if (previousSelected) {
+        previousSelected.classList.remove('mobile-selected');
     }
     
-    touchStartTime = Date.now();
-    touchMoved = false;
-    isDragging = false;
-    touchStartPos = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY
-    };
-    
-    // Don't prevent default here to allow other interactions
-}
-
-function handleMobileTouchMove(e) {
-    if (window.innerWidth > 768) return;
-    
-    const target = e.target.closest('.flowchart-node');
-    if (!target) return;
-    
-    const currentTouch = e.touches[0];
-    const deltaX = Math.abs(currentTouch.clientX - touchStartPos.x);
-    const deltaY = Math.abs(currentTouch.clientY - touchStartPos.y);
-    
-    if (deltaX > 10 || deltaY > 10) {
-        touchMoved = true;
-        
-        // If node is selected, allow dragging
-        if (selectedMobileNode === target) {
-            isDragging = true;
-            const nodeId = target.id.replace('node-', '');
-            const node = flowchart[nodeId];
-            
-            if (node && node.position) {
-                const canvas = document.getElementById('flowchart-canvas');
-                const rect = canvas.getBoundingClientRect();
-                
-                // Calculate new position relative to canvas
-                const newX = Math.max(0, currentTouch.clientX - rect.left - 100);
-                const newY = Math.max(0, currentTouch.clientY - rect.top - 50);
-                
-                node.position.x = newX;
-                node.position.y = newY;
-                
-                target.style.left = `${newX}px`;
-                target.style.top = `${newY}px`;
-                
-                // Update connections
-                const svg = document.querySelector('#flowchart-content svg');
-                if (svg) {
-                    renderConnections(svg);
-                }
-            }
-            
-            e.preventDefault();
-        }
+    // Hide mobile toolbar
+    const toolbar = document.querySelector('.mobile-node-toolbar');
+    if (toolbar) {
+        toolbar.classList.remove('show');
     }
 }
-
-function handleMobileTouchEnd(e) {
-    if (window.innerWidth > 768) return;
-    
-    const target = e.target.closest('.flowchart-node');
-    if (!target) return;
-    
-    const touchDuration = Date.now() - touchStartTime;
-    
-    // If it's a tap (short touch without movement)
-    if (touchDuration < 300 && !touchMoved && !isDragging) {
-        selectMobileNode(target);
-        e.preventDefault();
-    }
-    
-    isDragging = false;
-}
-
 // Mobile form submission handler
 function setupMobileFormSubmission() {
     const mobileForm = document.getElementById('mobile-node-form');
@@ -2883,131 +2510,60 @@ function initializeMobileFeatures() {
 }
 
 
-// Initialize everything when DOM is ready
+// REPLACE the entire DOMContentLoaded section with this:
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize mobile features
     initializeMobileFeatures();
     
+    // Initialize unified interaction system
+    initializeNodeInteractions();
+    
     // Setup existing functionality
-    if (typeof setupSearchEventListeners === 'function') {
-        setupSearchEventListeners();
-    }
-    if (typeof setupCanvasControls === 'function') {
-        setupCanvasControls();
-    }
-    if (typeof updateNavigateButtonState === 'function') {
-        updateNavigateButtonState();
+    setupSearchEventListeners();
+    setupCanvasControls();
+    updateNavigateButtonState();
+    
+    // Add click handler for the navigate button with proper validation
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        navigateBtn.removeAttribute('onclick');
+        
+        navigateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!isNavigationAvailable()) {
+                alert('Please create some nodes first before navigating your flowchart.');
+                return false;
+            }
+            switchMode('navigate');
+        });
     }
 });
 
 // Also setup immediately if DOM is already loaded
 if (document.readyState !== 'loading') {
     initializeMobileFeatures();
-}
-
-// =================================
-// MOBILE TOUCH & ZOOM FUNCTIONALITY
-// Add this entire section to the END of your main.js file
-// =================================
-
-// Enhanced mobile state management
-let mobileState = {
-    // Touch tracking
-    touches: new Map(),
-    lastTouchTime: 0,
-    touchStartTime: 0,
+    initializeNodeInteractions();
+    setupSearchEventListeners();
+    setupCanvasControls();
+    updateNavigateButtonState();
     
-    // Gesture recognition
-    isPinching: false,
-    isDragging: false,
-    isScrolling: false,
-    isTapping: false,
-    
-    // Pinch zoom
-    initialPinchDistance: 0,
-    initialScale: 1,
-    currentScale: 1,
-    minScale: 0.3,
-    maxScale: 3.0,
-    
-    // Pan/scroll
-    panStartX: 0,
-    panStartY: 0,
-    panCurrentX: 0,
-    panCurrentY: 0,
-    
-    // Node dragging
-    selectedNode: null,
-    dragStartPos: { x: 0, y: 0 },
-    nodeStartPos: { x: 0, y: 0 },
-    
-    // Thresholds
-    tapThreshold: 300, // ms
-    dragThreshold: 15, // pixels
-    pinchThreshold: 20, // pixels
-    
-    // Canvas reference
-    canvas: null,
-    content: null
-};
-
-// Initialize mobile touch functionality
-function initializeMobileTouchAndZoom() {
-    if (window.innerWidth > 768) return;
-    
-    mobileState.canvas = document.getElementById('flowchart-canvas');
-    mobileState.content = document.getElementById('flowchart-content');
-    
-    if (!mobileState.canvas || !mobileState.content) return;
-    
-    // Remove existing event listeners
-    removeMobileEventListeners();
-    
-    // Add new event listeners
-    addMobileEventListeners();
-    
-    // Initialize canvas transform
-    resetMobileCanvasTransform();
-    
-    console.log('Mobile touch and zoom initialized');
-}
-
-// Add all mobile event listeners
-function addMobileEventListeners() {
-    const canvas = mobileState.canvas;
-    
-    // Touch events
-    canvas.addEventListener('touchstart', handleMobileTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleMobileTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleMobileTouchEnd, { passive: false });
-    canvas.addEventListener('touchcancel', handleMobileTouchEnd, { passive: false });
-    
-    // Prevent default gestures
-    canvas.addEventListener('gesturestart', preventDefaultGesture, { passive: false });
-    canvas.addEventListener('gesturechange', preventDefaultGesture, { passive: false });
-    canvas.addEventListener('gestureend', preventDefaultGesture, { passive: false });
-    
-    // Prevent context menu on long press
-    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    
-    // Handle orientation changes
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleMobileResize);
-}
-
-// Remove mobile event listeners
-function removeMobileEventListeners() {
-    const canvas = mobileState.canvas;
-    if (!canvas) return;
-    
-    canvas.removeEventListener('touchstart', handleMobileTouchStart);
-    canvas.removeEventListener('touchmove', handleMobileTouchMove);
-    canvas.removeEventListener('touchend', handleMobileTouchEnd);
-    canvas.removeEventListener('touchcancel', handleMobileTouchEnd);
-    canvas.removeEventListener('gesturestart', preventDefaultGesture);
-    canvas.removeEventListener('gesturechange', preventDefaultGesture);
-    canvas.removeEventListener('gestureend', preventDefaultGesture);
-    canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        navigateBtn.removeAttribute('onclick');
+        
+        navigateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!isNavigationAvailable()) {
+                alert('Please create some nodes first before navigating your flowchart.');
+                return false;
+            }
+            switchMode('navigate');
+        });
+    }
 }
 
 // Prevent default gesture handling
@@ -3016,92 +2572,74 @@ function preventDefaultGesture(e) {
     e.stopPropagation();
 }
 
-// Handle touch start
-function handleMobileTouchStart(e) {
+// Handle touch move
+function handleMobileTouchMove(e) {
     if (window.innerWidth > 768) return;
     
-    const currentTime = Date.now();
-    mobileState.touchStartTime = currentTime;
-    mobileState.lastTouchTime = currentTime;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - mobileState.startX;
+    const deltaY = touch.clientY - mobileState.startY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    // Store all touches
-    mobileState.touches.clear();
-    for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        mobileState.touches.set(touch.identifier, {
-            x: touch.clientX,
-            y: touch.clientY,
-            startX: touch.clientX,
-            startY: touch.clientY,
-            startTime: currentTime
-        });
-    }
-    
-    const touchCount = e.touches.length;
-    
-    if (touchCount === 1) {
-        handleSingleTouchStart(e.touches[0]);
-    } else if (touchCount === 2) {
-        handlePinchStart(e.touches[0], e.touches[1]);
-        e.preventDefault();
-    }
-    
-    // Reset gesture states
-    mobileState.isTapping = true;
-    mobileState.isDragging = false;
-    mobileState.isScrolling = false;
-}
-
-// Handle single touch start
-// REPLACE the handleSingleTouchStart function (around line 1500) with this:
-function handleSingleTouchStart(touch) {
-    const rect = mobileState.canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-    
-    // Check if touching a node - FIXED: Better element detection
-    const elementsAtPoint = document.elementsFromPoint(touch.clientX, touch.clientY);
-    const flowchartNode = elementsAtPoint.find(el => el.classList && el.classList.contains('flowchart-node'));
-    
-    if (flowchartNode) {
-        mobileState.selectedNode = flowchartNode;
-        
-        // Store drag start positions (in screen coordinates)
-        mobileState.dragStartPos = { x: touch.clientX, y: touch.clientY };
-        
-        const nodeId = flowchartNode.id.replace('node-', '');
-        const node = flowchart[nodeId];
-        
-        if (node && node.position) {
-            // Store the original node position
-            mobileState.nodeStartPos = { 
-                x: node.position.x, 
-                y: node.position.y 
-            };
+    // Determine what type of interaction this is
+    if (distance > mobileState.dragThreshold) {
+        if (mobileState.selectedNode && selectedMobileNode === mobileState.selectedNode) {
+            // Node dragging
+            if (!mobileState.isDraggingNode) {
+                mobileState.isDraggingNode = true;
+                startNodeDrag();
+            }
+            updateNodeDrag(touch);
+            e.preventDefault(); // Prevent scrolling during node drag
+        } else {
+            // Canvas scrolling - let the browser handle it naturally
+            if (!mobileState.isScrolling) {
+                mobileState.isScrolling = true;
+                // Remove any node visual feedback
+                if (mobileState.selectedNode) {
+                    mobileState.selectedNode.style.transform = '';
+                    mobileState.selectedNode.style.transition = '';
+                }
+            }
+            // DON'T preventDefault() here - let browser handle scrolling
         }
-        
-        // Add visual feedback
-        flowchartNode.style.transition = 'transform 0.1s ease';
-        flowchartNode.style.transform = 'scale(0.98)';
-    } else {
-        mobileState.selectedNode = null;
-        deselectMobileNode();
     }
     
-    // Store pan start position
-    mobileState.panStartX = x;
-    mobileState.panStartY = y;
-    mobileState.panCurrentX = x;
-    mobileState.panCurrentY = y;
+    mobileState.lastX = touch.clientX;
+    mobileState.lastY = touch.clientY;
 }
 
-// Handle pinch start
-function handlePinchStart(touch1, touch2) {
-    mobileState.isPinching = true;
-    mobileState.initialPinchDistance = getDistance(touch1, touch2);
-    mobileState.initialScale = mobileState.currentScale;
+// Handle touch end
+function handleMobileTouchEnd(e) {
+    if (window.innerWidth > 768) return;
     
-    console.log('Pinch started:', mobileState.initialPinchDistance);
+    const touchDuration = Date.now() - mobileState.touchStartTime;
+    const deltaX = mobileState.lastX - mobileState.startX;
+    const deltaY = mobileState.lastY - mobileState.startY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Handle tap
+    if (touchDuration < mobileState.tapThreshold && distance < mobileState.dragThreshold) {
+        if (mobileState.selectedNode) {
+            selectMobileNode(mobileState.selectedNode);
+        }
+    }
+    
+    // Clean up drag state
+    if (mobileState.isDraggingNode) {
+        finishNodeDrag();
+    }
+    
+    // Remove visual feedback
+    if (mobileState.selectedNode) {
+        mobileState.selectedNode.style.transform = '';
+        mobileState.selectedNode.style.transition = '';
+    }
+    
+    // Reset states
+    mobileState.isScrolling = false;
+    mobileState.isDraggingNode = false;
+    mobileState.selectedNode = null;
 }
 
 // Handle touch move
@@ -3127,51 +2665,7 @@ function handleMobileTouchMove(e) {
     }
 }
 
-// Handle single touch move
-function handleSingleTouchMove(touch, e) {
-    const currentTime = Date.now();
-    const deltaX = touch.clientX - mobileState.dragStartPos.x;
-    const deltaY = touch.clientY - mobileState.dragStartPos.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    // Determine gesture type
-    if (distance > mobileState.dragThreshold) {
-        mobileState.isTapping = false;
-        
-        if (mobileState.selectedNode && selectedMobileNode === mobileState.selectedNode) {
-            // Node dragging
-            if (!mobileState.isDragging) {
-                mobileState.isDragging = true;
-                startNodeDrag();
-            }
-            updateNodeDrag(touch);
-            e.preventDefault();
-        } else {
-            // Canvas scrolling
-            if (!mobileState.isScrolling) {
-                mobileState.isScrolling = true;
-            }
-            updateCanvasScroll(deltaX, deltaY);
-        }
-    }
-}
 
-// Handle pinch move
-function handlePinchMove(touch1, touch2, e) {
-    e.preventDefault();
-    
-    const currentDistance = getDistance(touch1, touch2);
-    const scaleChange = currentDistance / mobileState.initialPinchDistance;
-    const newScale = Math.max(mobileState.minScale, 
-                             Math.min(mobileState.maxScale, 
-                                     mobileState.initialScale * scaleChange));
-    
-    // Calculate pinch center
-    const centerX = (touch1.clientX + touch2.clientX) / 2;
-    const centerY = (touch1.clientY + touch2.clientY) / 2;
-    
-    applyPinchZoom(newScale, centerX, centerY);
-}
 
 // Handle touch end
 function handleMobileTouchEnd(e) {
@@ -3205,14 +2699,7 @@ function handleMobileTouchEnd(e) {
     }
 }
 
-// Handle tap gesture
-function handleTap() {
-    if (mobileState.selectedNode) {
-        selectMobileNode(mobileState.selectedNode);
-    }
-}
 
-// Start node dragging
 function startNodeDrag() {
     if (!mobileState.selectedNode) return;
     
@@ -3230,9 +2717,8 @@ function startNodeDrag() {
     console.log('Started dragging node');
 }
 
-// Update node drag position
 function updateNodeDrag(touch) {
-    if (!mobileState.selectedNode || !mobileState.isDragging) return;
+    if (!mobileState.selectedNode || !mobileState.isDraggingNode) return;
     
     const rect = mobileState.canvas.getBoundingClientRect();
     const nodeId = mobileState.selectedNode.id.replace('node-', '');
@@ -3240,30 +2726,15 @@ function updateNodeDrag(touch) {
     
     if (!node || !node.position) return;
     
-    // FIXED: Calculate position accounting for zoom scale and scroll offset
-    const currentScale = mobileState.currentScale;
-    const canvas = mobileState.canvas;
+    // Calculate new position accounting for scroll
+    const touchX = touch.clientX - rect.left + mobileState.canvas.scrollLeft;
+    const touchY = touch.clientY - rect.top + mobileState.canvas.scrollTop;
+    const startTouchX = mobileState.dragStartPos.x + mobileState.canvas.scrollLeft;
+    const startTouchY = mobileState.dragStartPos.y + mobileState.canvas.scrollTop;
     
-    // Get touch position relative to canvas
-    const touchX = touch.clientX - rect.left;
-    const touchY = touch.clientY - rect.top;
+    const deltaX = touchX - startTouchX;
+    const deltaY = touchY - startTouchY;
     
-    // Account for canvas scroll position
-    const scrollX = canvas.scrollLeft;
-    const scrollY = canvas.scrollTop;
-    
-    // Calculate the actual position in the flowchart coordinate system
-    const actualX = (touchX + scrollX) / currentScale;
-    const actualY = (touchY + scrollY) / currentScale;
-    
-    // Calculate delta from initial drag position
-    const initialTouchX = (mobileState.dragStartPos.x - rect.left + canvas.scrollLeft) / currentScale;
-    const initialTouchY = (mobileState.dragStartPos.y - rect.top + canvas.scrollTop) / currentScale;
-    
-    const deltaX = actualX - initialTouchX;
-    const deltaY = actualY - initialTouchY;
-    
-    // Apply delta to original node position
     const newX = Math.max(0, mobileState.nodeStartPos.x + deltaX);
     const newY = Math.max(0, mobileState.nodeStartPos.y + deltaY);
     
@@ -3276,13 +2747,14 @@ function updateNodeDrag(touch) {
     mobileState.selectedNode.style.top = `${newY}px`;
     
     // Update connections immediately
-    updateNodeConnections();
+    const svg = document.querySelector('#flowchart-content svg');
+    if (svg) {
+        renderConnections(svg);
+    }
     
-    // Auto-expand canvas if needed
-    expandCanvasForDrag(newX, newY);
+    console.log(`Dragging node to: ${newX}, ${newY}`);
 }
 
-// Finish node dragging
 function finishNodeDrag() {
     if (!mobileState.selectedNode) return;
     
@@ -3298,70 +2770,6 @@ function finishNodeDrag() {
     console.log('Finished dragging node');
 }
 
-// Update canvas scroll position
-function updateCanvasScroll(deltaX, deltaY) {
-    const canvas = mobileState.canvas;
-    
-    // Apply scroll with momentum
-    const newScrollLeft = Math.max(0, canvas.scrollLeft - deltaX);
-    const newScrollTop = Math.max(0, canvas.scrollTop - deltaY);
-    
-    canvas.scrollLeft = newScrollLeft;
-    canvas.scrollTop = newScrollTop;
-    
-    // Update stored positions
-    mobileState.panCurrentX = mobileState.panStartX - deltaX;
-    mobileState.panCurrentY = mobileState.panStartY - deltaY;
-    
-    // FIXED: Update connections during scroll for mobile
-    if (window.innerWidth <= 768) {
-        setTimeout(() => {
-            updateNodeConnections();
-        }, 100);
-    }
-}
-
-// Apply pinch zoom
-function applyPinchZoom(scale, centerX, centerY) {
-    mobileState.currentScale = scale;
-    
-    const content = mobileState.content;
-    const rect = mobileState.canvas.getBoundingClientRect();
-    
-    // Calculate transform origin based on pinch center
-    const originX = (centerX - rect.left) / rect.width * 100;
-    const originY = (centerY - rect.top) / rect.height * 100;
-    
-    content.style.transformOrigin = `${originX}% ${originY}%`;
-    content.style.transform = `scale(${scale})`;
-    
-    // FIXED: Update connections after zoom change
-    setTimeout(() => {
-        updateNodeConnections();
-    }, 50);
-    
-    // Update zoom display if it exists
-    updateMobileZoomDisplay();
-    
-    console.log('Applied zoom scale:', scale);
-}
-
-// Finish pinch zoom
-function finishPinchZoom() {
-    mobileState.isPinching = false;
-    console.log('Finished pinch zoom at scale:', mobileState.currentScale);
-}
-
-// Reset mobile canvas transform
-function resetMobileCanvasTransform() {
-    if (!mobileState.content) return;
-    
-    mobileState.currentScale = 1;
-    mobileState.content.style.transform = 'scale(1)';
-    mobileState.content.style.transformOrigin = 'center center';
-    
-    updateMobileZoomDisplay();
-}
 
 // Update mobile zoom display
 function updateMobileZoomDisplay() {
@@ -3371,15 +2779,6 @@ function updateMobileZoomDisplay() {
     }
 }
 
-// Reset mobile gesture states
-function resetMobileGestureStates() {
-    mobileState.isTapping = false;
-    mobileState.isDragging = false;
-    mobileState.isScrolling = false;
-    mobileState.isPinching = false;
-    mobileState.selectedNode = null;
-    mobileState.touches.clear();
-}
 
 // Update node connections after dragging
 function updateNodeConnections() {
@@ -3390,38 +2789,6 @@ function updateNodeConnections() {
     }
 }
 
-// Expand canvas if node is dragged beyond current bounds
-function expandCanvasForDrag(nodeX, nodeY) {
-    const content = mobileState.content;
-    if (!content) return;
-    
-    const nodeWidth = 300; // Approximate node width
-    const nodeHeight = 200; // Approximate node height
-    const padding = 100;
-    
-    const requiredWidth = (nodeX + nodeWidth + padding) * mobileState.currentScale;
-    const requiredHeight = (nodeY + nodeHeight + padding) * mobileState.currentScale;
-    
-    const currentWidth = parseInt(content.style.width) || 0;
-    const currentHeight = parseInt(content.style.height) || 0;
-    
-    if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
-        const newWidth = Math.max(requiredWidth, currentWidth);
-        const newHeight = Math.max(requiredHeight, currentHeight);
-        
-        content.style.width = `${newWidth}px`;
-        content.style.height = `${newHeight}px`;
-        content.style.minWidth = `${newWidth}px`;
-        content.style.minHeight = `${newHeight}px`;
-        
-        // Update SVG dimensions
-        const svg = content.querySelector('svg');
-        if (svg) {
-            svg.style.width = `${newWidth}px`;
-            svg.style.height = `${newHeight}px`;
-        }
-    }
-}
 
 // Handle orientation change
 function handleOrientationChange() {
@@ -3599,34 +2966,36 @@ function optimizeForMobilePerformance() {
     document.head.appendChild(style);
 }
 
-// Initialize on DOM ready and window load
+// REPLACE the DOMContentLoaded event listener with this:
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize mobile features first
     if (window.innerWidth <= 768) {
-        setTimeout(initializeEnhancedMobileFeatures, 100);
-    }
-});
-
-window.addEventListener('load', function() {
-    if (window.innerWidth <= 768) {
-        setTimeout(initializeEnhancedMobileFeatures, 200);
-    }
-});
-
-// Re-initialize when flowchart updates
-const originalUpdateFlowchartDisplay = window.updateFlowchartDisplay;
-window.updateFlowchartDisplay = function() {
-    if (originalUpdateFlowchartDisplay) {
-        originalUpdateFlowchartDisplay();
+        initializeMobileFeatures();
+        initializeMobileTouchAndZoom();
     }
     
-    // Re-initialize mobile features after flowchart update
-    if (window.innerWidth <= 768) {
-        setTimeout(() => {
-            initializeMobileTouchAndZoom();
-            addMobileZoomButtons();
-        }, 100);
+    // Then setup other functionality
+    setupSearchEventListeners();
+    setupCanvasControls();
+    updateNavigateButtonState();
+    
+    // Add click handler for the navigate button with proper validation
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        navigateBtn.removeAttribute('onclick');
+        
+        navigateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!isNavigationAvailable()) {
+                alert('Please create some nodes first before navigating your flowchart.');
+                return false;
+            }
+            switchMode('navigate');
+        });
     }
-};
+});
 
 console.log('Mobile touch and zoom functionality loaded');
 
@@ -3647,3 +3016,490 @@ window.updateFlowchartDisplay = function() {
         }, 100);
     }
 };
+
+// =================================
+// UNIFIED NODE INTERACTION SYSTEM
+// Add this to the END of main.js
+// =================================
+
+// Global interaction state
+let interactionState = {
+    // Device detection
+    isMobile: window.innerWidth <= 768,
+    
+    // Touch/mouse state
+    isDragging: false,
+    isSelecting: false,
+    startTime: 0,
+    startPos: { x: 0, y: 0 },
+    currentPos: { x: 0, y: 0 },
+    
+    // Node state
+    selectedNode: null,
+    selectedNodeData: null,
+    dragStartNodePos: { x: 0, y: 0 },
+    
+    // Thresholds
+    tapThreshold: 300, // ms
+    dragThreshold: 10, // pixels
+    
+    // Canvas references
+    canvas: null,
+    content: null
+};
+
+// =================================
+// MAIN INITIALIZATION
+// =================================
+
+function initializeNodeInteractions() {
+    // Clean up existing listeners
+    removeAllInteractionListeners();
+    
+    // Update device detection
+    interactionState.isMobile = window.innerWidth <= 768;
+    interactionState.canvas = document.getElementById('flowchart-canvas');
+    interactionState.content = document.getElementById('flowchart-content');
+    
+    if (!interactionState.canvas || !interactionState.content) return;
+    
+    // Add unified event listeners
+    addUnifiedEventListeners();
+    
+    console.log(`Initialized ${interactionState.isMobile ? 'mobile' : 'desktop'} node interactions`);
+}
+
+// =================================
+// EVENT LISTENER MANAGEMENT
+// =================================
+
+function removeAllInteractionListeners() {
+    const canvas = document.getElementById('flowchart-canvas');
+    if (!canvas) return;
+    
+    // Remove all possible event listeners
+    canvas.removeEventListener('touchstart', handleUnifiedStart);
+    canvas.removeEventListener('touchmove', handleUnifiedMove);
+    canvas.removeEventListener('touchend', handleUnifiedEnd);
+    canvas.removeEventListener('touchcancel', handleUnifiedEnd);
+    canvas.removeEventListener('mousedown', handleUnifiedStart);
+    document.removeEventListener('mousemove', handleUnifiedMove);
+    document.removeEventListener('mouseup', handleUnifiedEnd);
+    canvas.removeEventListener('contextmenu', preventContextMenu);
+    
+    // Clear selection state
+    clearSelection();
+}
+
+function addUnifiedEventListeners() {
+    const canvas = interactionState.canvas;
+    
+    if (interactionState.isMobile) {
+        // Mobile: Touch events
+        canvas.addEventListener('touchstart', handleUnifiedStart, { passive: false });
+        canvas.addEventListener('touchmove', handleUnifiedMove, { passive: false });
+        canvas.addEventListener('touchend', handleUnifiedEnd, { passive: true });
+        canvas.addEventListener('touchcancel', handleUnifiedEnd, { passive: true });
+    } else {
+        // Desktop: Mouse events
+        canvas.addEventListener('mousedown', handleUnifiedStart, { passive: false });
+        document.addEventListener('mousemove', handleUnifiedMove, { passive: false });
+        document.addEventListener('mouseup', handleUnifiedEnd, { passive: true });
+    }
+    
+    // Prevent context menu on both
+    canvas.addEventListener('contextmenu', preventContextMenu);
+}
+
+function preventContextMenu(e) {
+    e.preventDefault();
+}
+
+// =================================
+// UNIFIED EVENT HANDLERS
+// =================================
+
+function handleUnifiedStart(e) {
+    const isTouch = e.type.startsWith('touch');
+    const point = isTouch ? e.touches[0] : e;
+    const target = e.target.closest('.flowchart-node');
+    
+    // Store initial state
+    interactionState.startTime = Date.now();
+    interactionState.startPos = { x: point.clientX, y: point.clientY };
+    interactionState.currentPos = { x: point.clientX, y: point.clientY };
+    interactionState.isDragging = false;
+    interactionState.isSelecting = false;
+    
+    if (target) {
+        // Touching/clicking a node
+        const nodeId = target.id.replace('node-', '');
+        const nodeData = flowchart[nodeId];
+        
+        if (!nodeData) return;
+        
+        interactionState.selectedNode = target;
+        interactionState.selectedNodeData = nodeData;
+        interactionState.isSelecting = true;
+        
+        // Store node's current position
+        if (nodeData.position) {
+            interactionState.dragStartNodePos = { 
+                x: nodeData.position.x, 
+                y: nodeData.position.y 
+            };
+        }
+        
+        // Visual feedback
+        if (interactionState.isMobile) {
+            applyMobileNodeSelectionFeedback(target);
+        } else {
+            applyDesktopNodeHoverFeedback(target);
+        }
+        
+        // Prevent default for nodes to enable dragging
+        e.preventDefault();
+    } else {
+        // Touching/clicking canvas - clear selection
+        clearSelection();
+        
+        // Allow normal scrolling on mobile
+        if (interactionState.isMobile) {
+            // Don't prevent default - allow canvas scrolling
+        } else {
+            // Desktop: could add canvas panning here if needed
+        }
+    }
+}
+
+function handleUnifiedMove(e) {
+    if (!interactionState.isSelecting && !interactionState.isDragging) return;
+    
+    const isTouch = e.type.startsWith('touch');
+    const point = isTouch ? e.touches[0] : e;
+    
+    if (!point) return;
+    
+    interactionState.currentPos = { x: point.clientX, y: point.clientY };
+    
+    const deltaX = point.clientX - interactionState.startPos.x;
+    const deltaY = point.clientY - interactionState.startPos.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Check if we should start dragging
+    if (!interactionState.isDragging && distance > interactionState.dragThreshold) {
+        if (interactionState.selectedNode && interactionState.selectedNodeData) {
+            startNodeDrag();
+            e.preventDefault(); // Prevent scrolling during drag
+        }
+    }
+    
+    // Continue dragging
+    if (interactionState.isDragging) {
+        updateNodeDrag(point);
+        e.preventDefault(); // Prevent scrolling during drag
+    }
+}
+
+function handleUnifiedEnd(e) {
+    const duration = Date.now() - interactionState.startTime;
+    const deltaX = interactionState.currentPos.x - interactionState.startPos.x;
+    const deltaY = interactionState.currentPos.y - interactionState.startPos.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Handle tap/click
+    if (!interactionState.isDragging && 
+        duration < interactionState.tapThreshold && 
+        distance < interactionState.dragThreshold) {
+        
+        if (interactionState.selectedNode) {
+            handleNodeTapClick();
+        }
+    }
+    
+    // End drag
+    if (interactionState.isDragging) {
+        endNodeDrag();
+    }
+    
+    // Clean up visual feedback
+    removeAllNodeFeedback();
+    
+    // Reset state
+    interactionState.isDragging = false;
+    interactionState.isSelecting = false;
+}
+
+// =================================
+// NODE INTERACTION FUNCTIONS
+// =================================
+
+function startNodeDrag() {
+    if (!interactionState.selectedNode || !interactionState.selectedNodeData) return;
+    
+    interactionState.isDragging = true;
+    
+    const node = interactionState.selectedNode;
+    
+    // Apply drag styling
+    node.style.zIndex = '1000';
+    node.style.opacity = '0.9';
+    node.style.transform = 'scale(1.05)';
+    node.style.transition = 'none';
+    node.classList.add('dragging');
+    
+    // Haptic feedback on mobile
+    if (interactionState.isMobile && navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+    
+    console.log('Started dragging node:', interactionState.selectedNodeData.id);
+}
+
+function updateNodeDrag(point) {
+    if (!interactionState.isDragging || !interactionState.selectedNode || !interactionState.selectedNodeData) return;
+    
+    const canvas = interactionState.canvas;
+    const rect = canvas.getBoundingClientRect();
+    const nodeData = interactionState.selectedNodeData;
+    
+    // Calculate new position
+    const canvasX = point.clientX - rect.left + canvas.scrollLeft;
+    const canvasY = point.clientY - rect.top + canvas.scrollTop;
+    const startCanvasX = interactionState.startPos.x - rect.left + canvas.scrollLeft;
+    const startCanvasY = interactionState.startPos.y - rect.top + canvas.scrollTop;
+    
+    const deltaX = canvasX - startCanvasX;
+    const deltaY = canvasY - startCanvasY;
+    
+    const newX = Math.max(0, interactionState.dragStartNodePos.x + deltaX);
+    const newY = Math.max(0, interactionState.dragStartNodePos.y + deltaY);
+    
+    // Update node position in data
+    nodeData.position.x = newX;
+    nodeData.position.y = newY;
+    
+    // Update DOM position
+    interactionState.selectedNode.style.left = `${newX}px`;
+    interactionState.selectedNode.style.top = `${newY}px`;
+    
+    // Update connections
+    const svg = document.querySelector('#flowchart-content svg');
+    if (svg && typeof renderConnections === 'function') {
+        renderConnections(svg);
+    }
+    
+    // Expand canvas if needed
+    expandCanvasIfNeeded(newX, newY);
+}
+
+function endNodeDrag() {
+    if (!interactionState.selectedNode || !interactionState.selectedNodeData) return;
+    
+    const node = interactionState.selectedNode;
+    
+    // Remove drag styling
+    node.style.zIndex = '';
+    node.style.opacity = '';
+    node.style.transform = '';
+    node.style.transition = '';
+    node.classList.remove('dragging');
+    
+    // Save positions
+    if (typeof saveCurrentNodePositions === 'function') {
+        saveCurrentNodePositions();
+    }
+    
+    console.log('Ended dragging node:', interactionState.selectedNodeData.id);
+}
+
+function handleNodeTapClick() {
+    if (!interactionState.selectedNode || !interactionState.selectedNodeData) return;
+    
+    if (interactionState.isMobile) {
+        // Mobile: Select node and show toolbar
+        selectMobileNode(interactionState.selectedNode);
+    } else {
+        // Desktop: Could show context menu or properties
+        console.log('Clicked node:', interactionState.selectedNodeData.id);
+        // Optionally highlight the node briefly
+        highlightNode(interactionState.selectedNode);
+    }
+}
+
+// =================================
+// VISUAL FEEDBACK FUNCTIONS
+// =================================
+
+function applyMobileNodeSelectionFeedback(node) {
+    node.style.transform = 'scale(0.98)';
+    node.style.transition = 'transform 0.1s ease';
+}
+
+function applyDesktopNodeHoverFeedback(node) {
+    node.style.transform = 'scale(1.02)';
+    node.style.transition = 'transform 0.1s ease';
+}
+
+function removeAllNodeFeedback() {
+    if (interactionState.selectedNode && !interactionState.isDragging) {
+        const node = interactionState.selectedNode;
+        // Only reset if not currently dragging
+        setTimeout(() => {
+            if (!interactionState.isDragging) {
+                node.style.transform = '';
+                node.style.transition = '';
+            }
+        }, 100);
+    }
+}
+
+function highlightNode(node) {
+    const originalBorderColor = node.style.borderColor;
+    const originalBoxShadow = node.style.boxShadow;
+    
+    node.style.borderColor = '#3498db';
+    node.style.boxShadow = '0 8px 24px rgba(52,152,219,0.4)';
+    
+    setTimeout(() => {
+        node.style.borderColor = originalBorderColor;
+        node.style.boxShadow = originalBoxShadow;
+    }, 1500);
+}
+
+// =================================
+// MOBILE-SPECIFIC FUNCTIONS
+// =================================
+
+function selectMobileNode(nodeElement) {
+    // Clear previous selection
+    clearMobileSelection();
+    
+    // Select new node
+    nodeElement.classList.add('mobile-selected');
+    interactionState.selectedNode = nodeElement;
+    
+    // Show mobile toolbar
+    const toolbar = document.querySelector('.mobile-node-toolbar');
+    if (toolbar) {
+        toolbar.classList.add('show');
+    }
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+function clearSelection() {
+    if (interactionState.isMobile) {
+        clearMobileSelection();
+    }
+    
+    interactionState.selectedNode = null;
+    interactionState.selectedNodeData = null;
+}
+
+// =================================
+// UTILITY FUNCTIONS
+// =================================
+
+function expandCanvasIfNeeded(nodeX, nodeY) {
+    const content = interactionState.content;
+    if (!content) return;
+    
+    const nodeWidth = 350; // Approximate node width
+    const nodeHeight = 200; // Approximate node height
+    const padding = 200;
+    
+    const requiredWidth = nodeX + nodeWidth + padding;
+    const requiredHeight = nodeY + nodeHeight + padding;
+    
+    const currentWidth = parseInt(content.style.width) || 1500;
+    const currentHeight = parseInt(content.style.height) || 1000;
+    
+    if (requiredWidth > currentWidth || requiredHeight > currentHeight) {
+        const newWidth = Math.max(requiredWidth, currentWidth);
+        const newHeight = Math.max(requiredHeight, currentHeight);
+        
+        content.style.width = `${newWidth}px`;
+        content.style.height = `${newHeight}px`;
+        content.style.minWidth = `${newWidth}px`;
+        content.style.minHeight = `${newHeight}px`;
+        
+        // Update SVG dimensions
+        const svg = content.querySelector('svg');
+        if (svg) {
+            svg.style.width = `${newWidth}px`;
+            svg.style.height = `${newHeight}px`;
+        }
+        
+        // Update node container
+        const nodeContainer = content.children[1];
+        if (nodeContainer) {
+            nodeContainer.style.width = `${newWidth}px`;
+            nodeContainer.style.height = `${newHeight}px`;
+        }
+    }
+}
+
+// =================================
+// WINDOW EVENT HANDLERS
+// =================================
+
+function handleWindowResize() {
+    const wasMobile = interactionState.isMobile;
+    const isMobile = window.innerWidth <= 768;
+    
+    if (wasMobile !== isMobile) {
+        // Device type changed, reinitialize
+        interactionState.isMobile = isMobile;
+        initializeNodeInteractions();
+    }
+}
+
+// =================================
+// INITIALIZATION AND CLEANUP
+// =================================
+
+// Handle window resize
+window.addEventListener('resize', handleWindowResize);
+
+// Handle orientation change
+window.addEventListener('orientationchange', () => {
+    setTimeout(initializeNodeInteractions, 300);
+});
+
+// Export functions for global access (for mobile toolbar)
+window.editSelectedMobileNode = function() {
+    if (!interactionState.selectedNode) return;
+    
+    const nodeId = interactionState.selectedNode.id.replace('node-', '');
+    
+    // Use existing editNode function if available
+    if (typeof editNode === 'function') {
+        editNode(nodeId);
+    }
+    
+    clearMobileSelection();
+};
+
+window.deleteSelectedMobileNode = function() {
+    if (!interactionState.selectedNode) return;
+    
+    const nodeId = interactionState.selectedNode.id.replace('node-', '');
+    
+    if (confirm(`Are you sure you want to delete node "${nodeId}"?`)) {
+        // Use existing deleteNode function if available
+        if (typeof deleteNode === 'function') {
+            deleteNode(nodeId);
+        }
+        clearMobileSelection();
+    }
+};
+
+window.deselectMobileNode = function() {
+    clearMobileSelection();
+};
+
+console.log('Unified interaction system loaded');

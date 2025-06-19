@@ -2172,3 +2172,109 @@ textarea {
     line-height: 0.8;
     transform: translateY(-2px);
 }
+/* Enhanced mobile scrolling improvements */
+@media (max-width: 768px) {
+    #flowchart-canvas {
+        /* Critical: Enable smooth native scrolling */
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        /* Allow all touch gestures by default */
+        touch-action: auto !important;
+        /* Smooth momentum scrolling */
+        scroll-behavior: smooth;
+        /* Prevent overscroll effects that interfere with scrolling */
+        overscroll-behavior: contain;
+        /* Better scroll performance */
+        will-change: scroll-position;
+    }
+    
+    #flowchart-content {
+        /* Ensure content is large enough to scroll */
+        min-width: 150vw !important;
+        min-height: 150vh !important;
+        /* Better touch handling */
+        touch-action: auto;
+        /* Performance optimization */
+        contain: layout style paint;
+    }
+    
+    /* Enhanced scrollbars for mobile */
+    #flowchart-canvas::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        background: rgba(0,0,0,0.1);
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.6);
+        border-radius: 4px;
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb:active {
+        background: rgba(102, 126, 234, 0.8);
+    }
+    
+    /* Optimize node touch handling */
+    .flowchart-node {
+        /* Only manipulate touch for nodes when selected */
+        touch-action: manipulation;
+        /* Better touch feedback */
+        transition: transform 0.1s ease;
+    }
+    
+    .flowchart-node.mobile-selected {
+        /* Allow node dragging when selected */
+        touch-action: none;
+    }
+    
+    .flowchart-node.dragging {
+        /* Optimize during drag */
+        touch-action: none;
+        pointer-events: none;
+        z-index: 1000;
+    }
+}
+/* Enhanced mobile node dragging */
+@media (max-width: 768px) {
+    .flowchart-node {
+        /* Better touch target */
+        min-height: 100px;
+        min-width: 120px;
+        /* Ensure touch events work */
+        touch-action: manipulation;
+        /* Better visual feedback */
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+    }
+    
+    .flowchart-node.mobile-selected {
+        /* Clear visual selection */
+        border-color: #3498db !important;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3) !important;
+        /* Allow dragging when selected */
+        touch-action: none;
+    }
+    
+    .flowchart-node.dragging {
+        /* Enhanced dragging state */
+        z-index: 1000 !important;
+        opacity: 0.9 !important;
+        transform: scale(1.05) !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+        /* Disable transitions during drag for better performance */
+        transition: none !important;
+        /* Prevent touch conflicts */
+        touch-action: none;
+        pointer-events: auto;
+    }
+    
+    /* Ensure canvas allows node interactions */
+    #flowchart-canvas {
+        /* Allow scrolling AND node interactions */
+        touch-action: auto;
+    }
+    
+    #flowchart-content {
+        /* Allow both scrolling and node manipulation */
+        touch-action: auto;
+    }
+}
