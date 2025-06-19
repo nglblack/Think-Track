@@ -1536,25 +1536,102 @@ textarea {
     background: rgba(255,255,255,0.3);
 }
 
-/* Mobile Side Menu */
+/* REPLACE THE MOBILE SIDE MENU CSS (around line 1200 in style.css) WITH THIS: */
+
+/* Mobile Side Menu - Opens from RIGHT side */
 .mobile-side-menu {
     position: fixed;
     top: 0;
-    left: -100%;
+    right: -100%;  /* Start hidden on the right */
     width: 90%;
     max-width: 400px;
     height: 100vh;
     background: white;
     z-index: 3000;
-    transition: left 0.3s ease;
+    transition: right 0.3s ease;  /* Animate right property */
     overflow-y: auto;
-    box-shadow: 2px 0 20px rgba(0,0,0,0.3);
+    box-shadow: -2px 0 20px rgba(0,0,0,0.3);  /* Shadow on left side */
 }
 
 .mobile-side-menu.open {
-    left: 0;
+    right: 0;  /* Slide in from right */
 }
 
+/* Update the mobile menu button to indicate left-side menu */
+.mobile-menu-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Mobile FAB positioning - move to left since menu is on right */
+.mobile-fab {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;  /* Move to left since menu is on right */
+    width: 60px;
+    height: 60px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(39, 174, 96, 0.4);
+    z-index: 1500;
+    transition: all 0.3s ease;
+    display: none;
+    /* Fix for bottom cutoff */
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mobile-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(39, 174, 96, 0.5);
+}
+
+.mobile-fab:active {
+    transform: scale(0.95);
+}
+
+/* Mobile node toolbar - position away from right menu and fix bottom cutoff */
+.mobile-node-toolbar {
+    position: fixed;
+    bottom: 90px;  /* More space from bottom */
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 1600;
+    display: none;
+    gap: 8px;
+    /* Fix for bottom cutoff */
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+    max-width: 90vw;  /* Prevent overflow on small screens */
+    flex-wrap: wrap;  /* Allow buttons to wrap if needed */
+}
+
+.mobile-node-toolbar.show {
+    display: flex;
+}
+
+.mobile-node-toolbar .btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    margin: 0;
+    min-width: auto;
+    flex: 0 0 auto;  /* Prevent button shrinking */
+}
 .mobile-overlay {
     position: fixed;
     top: 0;
@@ -1592,8 +1669,13 @@ textarea {
     font-size: 1.1rem;
 }
 
+/* Enhanced mobile menu content with better spacing */
 .mobile-menu-content {
     padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));  /* Add safe area padding */
+    min-height: calc(100vh - 120px);  /* Ensure content doesn't overflow */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Mobile Floating Action Button */
@@ -2276,5 +2358,460 @@ textarea {
     #flowchart-content {
         /* Allow both scrolling and node manipulation */
         touch-action: auto;
+    }
+}
+/* Fixed position zoom controls */
+.canvas-zoom-controls {
+    position: fixed !important;
+    top: 50% !important;
+    right: 20px !important;
+    transform: translateY(-50%) !important;
+    z-index: 1001 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    padding: 8px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(5px) !important;
+    transition: opacity 0.3s ease !important;
+}
+
+/* Hide zoom controls when not in create mode */
+#navigate-mode .canvas-zoom-controls {
+    display: none !important;
+}
+
+/* Mobile adjustments for zoom controls */
+@media (max-width: 768px) {
+    .canvas-zoom-controls {
+        right: 15px !important;
+        padding: 6px !important;
+        gap: 6px !important;
+    }
+    
+    .zoom-btn {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1rem !important;
+    }
+    
+    .zoom-level-display {
+        font-size: 0.65rem !important;
+    }
+}
+/* ADD THIS CSS RULE TO YOUR style.css FILE: */
+
+/* Hide desktop node action buttons on mobile */
+@media (max-width: 768px) {
+    .flowchart-node .btn {
+        display: none !important;
+    }
+    
+    /* Specifically hide the actions container on mobile */
+    .flowchart-node > div:last-child {
+        display: none !important;
+    }
+}
+
+/* Ensure buttons are visible on desktop */
+@media (min-width: 769px) {
+    .flowchart-node .btn {
+        display: inline-block;
+    }
+}
+/* ADD/UPDATE this CSS in your style.css - Mobile Node Options Styling */
+
+/* =================================
+   MOBILE NODE OPTIONS - KEEP VISIBLE
+   ================================= */
+
+@media (max-width: 768px) {
+    
+    /* Hide ONLY the edit/delete action buttons on mobile */
+    .desktop-node-actions {
+        display: none !important;
+    }
+    
+    /* Hide any standalone edit/delete buttons */
+    .flowchart-node .btn:not(.mobile-node-toolbar .btn) {
+        display: none !important;
+    }
+    
+    /* KEEP options visible and well-styled on mobile */
+    .flowchart-node {
+        /* Better touch targets */
+        min-height: 100px !important;
+        min-width: 140px !important;
+        max-width: 280px !important;
+        padding: 12px !important;
+        
+        /* Enhanced touch feedback */
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+        
+        /* Clean appearance */
+        border: 2px solid #667eea !important;
+        border-radius: 12px !important;
+        background: white !important;
+    }
+    
+    /* Enhanced mobile option styling */
+    .flowchart-node > div:not(.desktop-node-actions) {
+        /* Ensure all content except desktop actions is visible */
+        display: block !important;
+    }
+    
+    /* Better option readability on mobile */
+    .flowchart-node > div > div {
+        /* Options container styling */
+        margin-bottom: 8px;
+    }
+    
+    .flowchart-node > div > div > div {
+        /* Individual option styling */
+        display: flex !important;
+        align-items: center !important;
+        padding: 6px 8px !important;
+        background: #f8f9fa !important;
+        border-radius: 5px !important;
+        margin-bottom: 3px !important;
+        font-size: 0.7rem !important;
+        border-left: 3px solid #667eea !important;
+    }
+    
+    /* Better mobile option text */
+    .flowchart-node span {
+        font-size: 0.65rem !important;
+        line-height: 1.2 !important;
+    }
+    
+    /* Mobile node header */
+    .flowchart-node > div:first-child {
+        margin-bottom: 8px !important;
+        font-size: 0.7rem !important;
+        font-weight: bold !important;
+    }
+    
+    /* Mobile instruction text */
+    .flowchart-node > div:nth-child(2) {
+        margin-bottom: 8px !important;
+        font-size: 0.75rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    /* Mobile selection state */
+    .flowchart-node.mobile-selected {
+        border-color: #3498db !important;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: scale(1.02) !important;
+    }
+    
+    /* Mobile touch feedback */
+    .flowchart-node:active {
+        transform: scale(0.98) !important;
+    }
+    
+    /* Enhanced mobile toolbar - keep existing functionality */
+    .mobile-node-toolbar {
+        position: fixed;
+        bottom: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 12px;
+        padding: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        z-index: 1600;
+        display: none;
+        gap: 10px;
+        max-width: 90vw;
+        flex-wrap: wrap;
+        margin-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    
+    .mobile-node-toolbar.show {
+        display: flex;
+    }
+    
+    .mobile-node-toolbar .btn {
+        padding: 10px 16px !important;
+        font-size: 0.85rem !important;
+        margin: 0 !important;
+        min-width: 80px;
+        flex: 0 0 auto;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: inline-block !important; /* Override the hide rule for toolbar buttons */
+    }
+    
+    /* Broken link warning styling on mobile */
+    .flowchart-node span[style*="color: #e74c3c"] {
+        color: #e74c3c !important;
+        font-weight: 600;
+    }
+    
+    /* Valid link styling on mobile */
+    .flowchart-node span[style*="color: #667eea"] {
+        color: #667eea !important;
+        font-weight: 500;
+    }
+}
+
+/* =================================
+   DESKTOP STYLING - UNCHANGED
+   ================================= */
+
+@media (min-width: 769px) {
+    
+    /* Desktop nodes with action buttons */
+    .desktop-node-actions {
+        display: flex !important;
+        gap: 6px;
+        padding-top: 10px;
+        border-top: 1px solid #e0e0e0;
+        margin-top: 8px;
+    }
+    
+    .desktop-node-actions .btn {
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
+        margin: 0 !important;
+        min-width: auto !important;
+        flex: 1;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .desktop-node-actions .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Enhanced desktop node hover effects */
+    .flowchart-node:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        border-color: #5a6fd8;
+    }
+    
+    /* Desktop node styling */
+    .flowchart-node {
+        cursor: move;
+        transition: all 0.3s ease;
+    }
+}
+
+/* =================================
+   OPTION STYLING FOR BOTH PLATFORMS
+   ================================= */
+
+/* Consistent option styling across desktop and mobile */
+.flowchart-node div[style*="border-left: 3px solid"] {
+    font-size: 0.7rem;
+    padding: 4px 6px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+/* Mobile-specific option adjustments */
+@media (max-width: 768px) {
+    .flowchart-node div[style*="border-left: 3px solid"] {
+        font-size: 0.65rem !important;
+        padding: 5px 7px !important;
+        margin-bottom: 3px !important;
+    }
+}
+/* ADD/UPDATE this CSS in your style.css - Mobile Node Colors Fix */
+
+/* =================================
+   MOBILE NODE TYPE COLORS - FIXED
+   ================================= */
+
+@media (max-width: 768px) {
+    
+    /* Base mobile node styling */
+    .flowchart-node {
+        min-height: 100px !important;
+        min-width: 140px !important;
+        max-width: 280px !important;
+        padding: 12px !important;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+        border-radius: 12px !important;
+        background: white !important;
+        /* Default border - will be overridden by node type */
+        border: 2px solid #667eea !important;
+    }
+    
+    /* START NODE - Green border (mobile) */
+    .flowchart-node[style*="border-color: #27ae60"],
+    .flowchart-node[style*="border-left-width: 6px"][style*="border-color: #27ae60"] {
+        border-color: #27ae60 !important;
+        border-left-width: 6px !important;
+        border-left-color: #27ae60 !important;
+    }
+    
+    /* END NODE - Red border (mobile) */
+    .flowchart-node[style*="border-color: #e74c3c"],
+    .flowchart-node[style*="border-left-width: 6px"][style*="border-color: #e74c3c"] {
+        border-color: #e74c3c !important;
+        border-left-width: 6px !important;
+        border-left-color: #e74c3c !important;
+    }
+    
+    /* REGULAR NODE - Blue border (mobile) */
+    .flowchart-node:not([style*="border-color: #27ae60"]):not([style*="border-color: #e74c3c"]) {
+        border-color: #667eea !important;
+        border-left-width: 2px !important;
+    }
+    
+    /* Mobile selection state - preserve node type colors */
+    .flowchart-node.mobile-selected[style*="border-color: #27ae60"] {
+        border-color: #27ae60 !important;
+        border-left-width: 6px !important;
+        box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: scale(1.02) !important;
+    }
+    
+    .flowchart-node.mobile-selected[style*="border-color: #e74c3c"] {
+        border-color: #e74c3c !important;
+        border-left-width: 6px !important;
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: scale(1.02) !important;
+    }
+    
+    .flowchart-node.mobile-selected:not([style*="border-color: #27ae60"]):not([style*="border-color: #e74c3c"]) {
+        border-color: #3498db !important;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+        transform: scale(1.02) !important;
+    }
+    
+    /* Mobile touch feedback - maintain colors */
+    .flowchart-node:active {
+        transform: scale(0.98) !important;
+    }
+    
+    /* Enhanced visual indicators for mobile */
+    .flowchart-node[style*="border-color: #27ae60"]::before {
+        content: "🚀";
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        font-size: 0.8rem;
+        background: #27ae60;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        z-index: 10;
+    }
+    
+    .flowchart-node[style*="border-color: #e74c3c"]::before {
+        content: "🏁";
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        font-size: 0.8rem;
+        background: #e74c3c;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        z-index: 10;
+    }
+}
+
+/* =================================
+   ENSURE DESKTOP COLORS STILL WORK
+   ================================= */
+
+@media (min-width: 769px) {
+    
+    /* Desktop start nodes */
+    .flowchart-node[style*="border-color: #27ae60"] {
+        border-color: #27ae60 !important;
+        border-left-width: 6px !important;
+    }
+    
+    /* Desktop end nodes */
+    .flowchart-node[style*="border-color: #e74c3c"] {
+        border-color: #e74c3c !important;
+        border-left-width: 6px !important;
+    }
+    
+    /* Desktop regular nodes */
+    .flowchart-node:not([style*="border-color: #27ae60"]):not([style*="border-color: #e74c3c"]) {
+        border-color: #667eea !important;
+    }
+    
+    /* Desktop hover states maintain colors */
+    .flowchart-node[style*="border-color: #27ae60"]:hover {
+        border-color: #229954 !important;
+        box-shadow: 0 6px 20px rgba(39, 174, 96, 0.25);
+    }
+    
+    .flowchart-node[style*="border-color: #e74c3c"]:hover {
+        border-color: #c0392b !important;
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.25);
+    }
+    
+    .flowchart-node:not([style*="border-color: #27ae60"]):not([style*="border-color: #e74c3c"]):hover {
+        border-color: #5a6fd8 !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
+    }
+}
+
+/* =================================
+   ALTERNATIVE APPROACH - CLASS-BASED
+   ================================= */
+
+/* If the inline style approach doesn't work, use these classes */
+.flowchart-node.start-node {
+    border-color: #27ae60 !important;
+    border-left-width: 6px !important;
+}
+
+.flowchart-node.end-node {
+    border-color: #e74c3c !important;
+    border-left-width: 6px !important;
+}
+
+.flowchart-node.regular-node {
+    border-color: #667eea !important;
+    border-left-width: 2px !important;
+}
+
+/* Mobile-specific class styling */
+@media (max-width: 768px) {
+    .flowchart-node.start-node {
+        border-color: #27ae60 !important;
+        border-left-width: 6px !important;
+        border-left-color: #27ae60 !important;
+    }
+    
+    .flowchart-node.end-node {
+        border-color: #e74c3c !important;
+        border-left-width: 6px !important;
+        border-left-color: #e74c3c !important;
+    }
+    
+    .flowchart-node.start-node.mobile-selected {
+        box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    
+    .flowchart-node.end-node.mobile-selected {
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
     }
 }
