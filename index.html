@@ -7,6 +7,66 @@
    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- Mobile Navigation -->
+<div class="mobile-nav">
+    <div class="mobile-nav-title">📋 Think Track</div>
+    <button class="mobile-menu-btn" onclick="openMobileMenu()">☰</button>
+</div>
+
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- Mobile Side Menu -->
+<div class="mobile-side-menu">
+    <div class="mobile-menu-header">
+        <h2 style="margin: 0; font-size: 1.3rem;">📝 Add New Node</h2>
+        <button class="mobile-menu-close" onclick="closeMobileMenu()">✕</button>
+    </div>
+    <div class="mobile-menu-content">
+        <!-- Mobile Form -->
+        <form id="mobile-node-form">
+            <div class="form-group">
+                <label for="mobile-node-id">Node ID:</label>
+                <input type="text" id="mobile-node-id" placeholder="e.g., start, check-id, end" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="mobile-node-instruction">Instruction Text:</label>
+                <textarea id="mobile-node-instruction" placeholder="e.g., Ask the customer for their ID" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Options:</label>
+                <div class="options-container" id="mobile-options-container">
+                    <div class="option-item">
+                        <input type="text" placeholder="Option label (e.g., Yes)">
+                        <input type="text" placeholder="Next node ID (e.g., verify-id)">
+                        <button type="button" class="remove-option" onclick="removeMobileOption(this)">×</button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="addMobileOption()">+ Add Option</button>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-large" id="mobile-submit-btn">Add Node</button>
+            <button type="button" class="btn btn-secondary btn-large hidden" id="mobile-cancel-edit-btn" onclick="cancelMobileEdit()">Cancel Edit</button>
+        </form>
+        
+        <!-- Navigation Button -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+            <button class="btn btn-primary btn-large" onclick="switchToNavigateFromMobile()">
+                🔁 Navigate Flowchart
+            </button>
+        </div>
+    </div>
+</div>
+    <div class="mobile-fab" onclick="openMobileMenu()" title="Add New Node"></div>
+<!-- Mobile Node Toolbar (shows when node is selected) -->
+<div class="mobile-node-toolbar">
+    <button class="btn btn-primary" onclick="editSelectedMobileNode()">✏️ Edit</button>
+    <button class="btn btn-danger" onclick="deleteSelectedMobileNode()">🗑️ Delete</button>
+    <button class="btn btn-secondary" onclick="deselectMobileNode()">✕ Close</button>
+</div>
+
    <div class="container">
        <!-- Create Mode -->
        <div id="create-mode">

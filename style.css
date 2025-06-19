@@ -1493,3 +1493,682 @@ textarea {
     height: 100vh;
     overflow: hidden;
 }
+/* =================================
+   MOBILE UI IMPROVEMENTS
+   Add this entire section to the END of your style.css file
+   ================================= */
+
+/* Mobile Navigation Bar */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(102, 126, 234, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    padding: 0 20px;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.mobile-nav-title {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.mobile-menu-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Mobile Side Menu */
+.mobile-side-menu {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 90%;
+    max-width: 400px;
+    height: 100vh;
+    background: white;
+    z-index: 3000;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    box-shadow: 2px 0 20px rgba(0,0,0,0.3);
+}
+
+.mobile-side-menu.open {
+    left: 0;
+}
+
+.mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 2500;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.mobile-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-menu-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mobile-menu-close {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.mobile-menu-content {
+    padding: 20px;
+}
+
+/* Mobile Floating Action Button */
+.mobile-fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(39, 174, 96, 0.4);
+    z-index: 1500;
+    transition: all 0.3s ease;
+    display: none;
+}
+
+.mobile-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(39, 174, 96, 0.5);
+}
+
+.mobile-fab:active {
+    transform: scale(0.95);
+}
+
+/* Mobile Node Selection */
+.flowchart-node.mobile-selected {
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+    transform: scale(1.02);
+}
+
+.mobile-node-toolbar {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 1600;
+    display: none;
+    gap: 8px;
+}
+
+.mobile-node-toolbar.show {
+    display: flex;
+}
+
+.mobile-node-toolbar .btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    margin: 0;
+    min-width: auto;
+}
+
+/* Mobile Scroll Hints */
+.scroll-hint {
+    position: absolute;
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    z-index: 1100;
+    pointer-events: none;
+    animation: pulse 2s infinite;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.scroll-hint-horizontal {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.scroll-hint-vertical {
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+}
+
+/* Mobile Layout Adjustments */
+@media (max-width: 768px) {
+    /* Show mobile elements */
+    .mobile-nav {
+        display: flex;
+    }
+    
+    .mobile-fab {
+        display: block;
+    }
+    
+    /* Hide desktop sidebar */
+    .sidebar {
+        display: none;
+    }
+    
+    /* Adjust container for mobile nav */
+    .container {
+        padding: 70px 10px 20px 10px;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    /* Full width main content */
+    .main-layout {
+        flex-direction: column;
+        height: calc(100vh - 90px);
+        gap: 0;
+    }
+    
+    .main-content {
+        flex: 1;
+        height: 100%;
+        min-height: 0;
+    }
+    
+    /* Adjust flowchart panel */
+    .flowchart-panel {
+        height: 100%;
+        margin-bottom: 0;
+        padding: 15px;
+    }
+    
+    /* ENHANCED MOBILE CANVAS WITH IMPROVED SCROLLING */
+    #flowchart-canvas {
+        height: calc(100% - 140px);
+        padding: 10px;
+        border-radius: 8px;
+        /* Critical scrolling improvements */
+        overflow: auto;
+        overflow-x: auto;
+        overflow-y: auto;
+        /* Enable momentum scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scrolling */
+        scroll-behavior: smooth;
+        /* Allow touch panning in all directions */
+        touch-action: pan-x pan-y;
+        /* Ensure scrollbars are visible */
+        scrollbar-width: auto;
+        /* Add scroll padding for better UX */
+        scroll-padding: 20px;
+        /* Prevent content from being cut off */
+        box-sizing: border-box;
+        /* Better scroll snapping */
+        scroll-snap-type: none;
+        /* Optimize for touch scrolling */
+        overscroll-behavior: contain;
+        /* Prevent rubber band effect */
+        overscroll-behavior-x: none;
+        overscroll-behavior-y: none;
+    }
+    
+    /* Enhanced scrollbar styling for mobile */
+    #flowchart-canvas::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+        background: rgba(0,0,0,0.05);
+        border-radius: 5px;
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.05);
+        border-radius: 5px;
+        margin: 5px;
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.7);
+        border-radius: 5px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.9);
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-corner {
+        background: rgba(0,0,0,0.05);
+    }
+    
+    /* Enhanced flowchart content for better scrolling */
+    #flowchart-content {
+        position: relative;
+        /* Ensure minimum scrollable area */
+        min-width: 100vw;
+        min-height: 100vh;
+        /* Allow content to expand as needed */
+        width: max-content;
+        height: max-content;
+        /* Add padding for better scroll experience */
+        padding: 20px;
+        /* Ensure proper box model */
+        box-sizing: border-box;
+        /* Ensure proper touch handling */
+        touch-action: pan-x pan-y;
+        /* Better rendering */
+        will-change: transform;
+        /* Optimize for scrolling */
+        contain: layout style paint;
+    }
+    
+    /* Performance optimizations during scroll */
+    #flowchart-content.scrolling {
+        transform: translateZ(0);
+        will-change: scroll-position;
+    }
+    
+    #flowchart-content.scrolling .flowchart-node:not(.mobile-selected) {
+        transition: none !important;
+        transform: translateZ(0);
+    }
+    
+    /* Mobile flowchart header */
+    .flowchart-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+    }
+    
+    .flowchart-title {
+        font-size: 1.1rem;
+        text-align: center;
+    }
+    
+    .flowchart-stats {
+        text-align: center;
+        align-self: center;
+    }
+    
+    /* Mobile flowchart actions */
+    .flowchart-actions {
+        flex-direction: row;
+        gap: 8px;
+        margin-top: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .flowchart-actions .btn,
+    .flowchart-actions .file-input-wrapper,
+    .example-dropdown {
+        flex: 0 0 auto;
+        min-width: 100px;
+        max-width: 150px;
+    }
+    
+    .flowchart-actions .btn {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+    
+    .flowchart-actions .file-input-label {
+        padding: 8px 12px;
+        font-size: 0.75rem;
+    }
+    
+    /* Mobile node styling with enhanced touch support */
+    .flowchart-node {
+        min-width: 140px;
+        max-width: 280px;
+        font-size: 0.8rem;
+        padding: 10px;
+        /* Enable touch interactions */
+        touch-action: manipulation;
+        /* Prevent text selection on touch */
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        /* Enhanced visual feedback for touch */
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        /* Optimize rendering during scroll */
+        will-change: transform;
+        /* Better compositing */
+        transform: translateZ(0);
+        /* Reduce repaints */
+        contain: layout style paint;
+        /* Ensure proper stacking */
+        z-index: 10;
+    }
+    
+    /* Touch feedback for nodes */
+    .flowchart-node:active {
+        transform: scale(0.98);
+    }
+    
+    /* Enhanced dragging state */
+    .flowchart-node.dragging {
+        z-index: 1000;
+        transform: translateZ(10px) scale(1.05);
+        opacity: 0.9;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+        transition: none;
+        will-change: transform, left, top;
+    }
+    
+    /* Performance optimizations for non-interacting nodes */
+    .flowchart-node:not(.mobile-selected):not(.dragging) {
+        transition: none;
+    }
+    
+    /* Mobile search container */
+    .search-container {
+        padding: 8px 12px;
+        margin-bottom: 15px;
+    }
+    
+    .search-input-wrapper {
+        max-width: 100%;
+    }
+    
+    .search-input-wrapper input {
+        padding: 8px 35px 8px 12px;
+        font-size: 0.85rem;
+    }
+    
+    /* Mobile navigate mode adjustments */
+    #navigate-mode .panel {
+        padding: 15px;
+        margin: 0;
+        height: calc(100vh - 90px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .current-node {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .node-instruction {
+        font-size: 1.1rem;
+        line-height: 1.5;
+    }
+    
+    .navigate-options {
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .navigate-options .btn-large {
+        padding: 14px 18px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+    }
+    
+    .navigation-buttons {
+        flex-direction: column;
+        gap: 10px;
+        max-width: 100%;
+    }
+    
+    .navigation-buttons .btn {
+        padding: 12px 18px;
+        font-size: 0.9rem;
+    }
+    
+    /* Mobile zoom controls */
+    .canvas-zoom-controls {
+        top: 10px;
+        right: 10px;
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .zoom-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+    
+    .zoom-level-display {
+        font-size: 0.65rem;
+    }
+    
+    /* Empty state adjustments for mobile */
+    .empty-state {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 300px;
+        text-align: center;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .container {
+        padding: 65px 5px 15px 5px;
+    }
+    
+    .flowchart-panel {
+        padding: 10px;
+    }
+    
+    #flowchart-canvas {
+        padding: 8px;
+        height: calc(100% - 120px);
+    }
+    
+    #flowchart-content {
+        min-width: 120vw;
+        min-height: 100vh;
+        padding: 15px;
+    }
+    
+    .flowchart-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    
+    .flowchart-actions .btn,
+    .flowchart-actions .file-input-wrapper,
+    .example-dropdown {
+        max-width: 100%;
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .mobile-side-menu {
+        width: 95%;
+    }
+    
+    .mobile-menu-content {
+        padding: 15px;
+    }
+    
+    .flowchart-node {
+        min-width: 120px;
+        max-width: 240px;
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+    
+    .mobile-fab {
+        width: 50px;
+        height: 50px;
+        font-size: 1.3rem;
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .scroll-hint {
+        font-size: 0.65rem;
+        padding: 6px 10px;
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container {
+        padding: 65px 10px 15px 10px;
+    }
+    
+    #flowchart-canvas {
+        height: calc(100% - 100px);
+        overflow-x: scroll;
+        overflow-y: auto;
+    }
+    
+    #flowchart-content {
+        min-width: 150vw;
+        min-height: 80vh;
+    }
+    
+    .current-node {
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .navigate-options .btn-large {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+    
+    .scroll-hint-horizontal {
+        animation: pulseHorizontal 2s infinite;
+    }
+    
+    @keyframes pulseHorizontal {
+        0%, 100% { opacity: 0.8; transform: translateX(-50%) scale(1); }
+        50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+    }
+}
+
+/* High DPI screen optimizations */
+@media (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
+    #flowchart-canvas::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    .flowchart-node {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* iPhone specific optimizations */
+@supports (-webkit-touch-callout: none) {
+    @media (max-width: 768px) {
+        #flowchart-canvas {
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x pan-y;
+        }
+        
+        #flowchart-content * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        input, textarea {
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+        }
+    }
+}
+
+/* Prevent zoom on form inputs on iOS */
+@media (max-width: 768px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    textarea,
+    select {
+        font-size: 16px !important;
+    }
+}
+/* Fix mobile FAB + icon size and appearance */
+.mobile-fab {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px !important;
+    font-weight: 200 !important;
+    line-height: 1 !important;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.mobile-fab::before {
+    content: '+';
+    font-size: 36px;
+    font-weight: 100;
+    line-height: 0.8;
+    transform: translateY(-2px);
+}
