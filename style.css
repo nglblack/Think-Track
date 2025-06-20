@@ -3676,3 +3676,78 @@ textarea {
         width: 100% !important;
     }
 }
+/* Add Clear All button to canvas zoom controls */
+.canvas-zoom-controls {
+    position: fixed !important;
+    top: 50% !important;
+    right: 20px !important;
+    transform: translateY(-50%) !important;
+    z-index: 1001 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    padding: 8px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(5px) !important;
+}
+
+/* Add separator line before Clear button */
+.canvas-zoom-controls::after {
+    content: '';
+    height: 1px;
+    background: #e0e0e0;
+    margin: 4px 0;
+    order: 10; /* Place before clear button */
+}
+
+/* Style the canvas clear button */
+.canvas-clear-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: #e74c3c;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    order: 11; /* Place at bottom */
+}
+
+.canvas-clear-btn:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+.canvas-clear-btn:active {
+    transform: scale(0.95);
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .canvas-zoom-controls {
+        right: 15px !important;
+        padding: 6px !important;
+    }
+    
+    .canvas-clear-btn {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.9rem !important;
+    }
+}
+
+/* Hide from mobile menu */
+@media (max-width: 768px) {
+    .mobile-menu-actions .btn-danger {
+        display: none !important;
+    }
+}

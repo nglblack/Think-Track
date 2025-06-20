@@ -3412,7 +3412,23 @@ function createZoomControls() {
     resetBtn.textContent = '⌂';
     resetBtn.title = 'Reset Zoom';
     resetBtn.onclick = () => handleZoomReset();
-    
+    // Clear all button
+    // Clear all button
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'canvas-clear-btn';
+    clearBtn.textContent = '🗑️';
+    clearBtn.title = 'Clear All Nodes';
+    clearBtn.onclick = () => {
+        // Just call clearFlowchart() directly - it already has confirmation
+        clearFlowchart();
+    };
+
+    // Add elements to zoom controls (update your existing function)
+    zoomControls.appendChild(zoomInBtn);
+    zoomControls.appendChild(zoomDisplay);
+    zoomControls.appendChild(zoomOutBtn);
+    zoomControls.appendChild(resetBtn);
+    zoomControls.appendChild(clearBtn);
     // Add elements to zoom controls
     zoomControls.appendChild(zoomInBtn);
     zoomControls.appendChild(zoomDisplay);
