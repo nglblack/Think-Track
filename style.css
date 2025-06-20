@@ -183,6 +183,15 @@ body {
    user-select: none;
 }
 
+/* Hide zoom controls in navigate mode */
+#navigate-mode .canvas-zoom-controls {
+    display: none !important;
+}
+
+/* Only show zoom controls in create mode */
+#create-mode .canvas-zoom-controls {
+    display: flex !important;
+}
 /* Enhanced canvas controls with better positioning */
 .canvas-controls {
    position: absolute;
@@ -1466,7 +1475,14 @@ textarea {
     border: 2px dashed #e0e0e0;
     transition: border-color 0.3s ease;
 }
+@media (max-width: 768px) {
+    
+    #flowchart-canvas {
+        height: calc(100% - 140px);
+        padding: 10px;
 
+    }
+}
 /* Ensure the main layout uses full height */
 .main-layout {
     display: flex;
@@ -2813,5 +2829,833 @@ textarea {
     
     .flowchart-node.end-node.mobile-selected {
         box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.3), 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+}
+@media (max-width: 768px) {
+    /* ... existing mobile styles ... */
+    
+    /* MOBILE ONLY - TALLER CANVAS */
+    #flowchart-canvas {
+        height: calc(100% - 80px) !important; /* Taller - was 140px, now 80px */
+        padding: 10px;
+        border-radius: 8px;
+        /* Keep all existing mobile scrolling properties */
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: auto !important;
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
+        will-change: scroll-position;
+    }
+    
+    /* MOBILE ONLY - EXPANDED CONTENT AREA */
+    #flowchart-content {
+        min-width: 150vw !important;
+        min-height: 180vh !important; /* Increased from 150vh for more scroll space */
+        touch-action: auto;
+        contain: layout style paint;
+        padding: 25px !important; /* More padding for better scroll experience */
+    }
+    
+    /* MOBILE ONLY - PUSH BUTTONS LOWER */
+    .flowchart-actions {
+        margin-top: 30px !important; /* Increased spacing */
+        margin-bottom: 25px !important; /* More bottom space */
+        padding-top: 20px !important; /* Additional top padding */
+        border-top: 2px solid #f0f0f0 !important; /* Visual separator */
+    }
+    
+    /* MOBILE ONLY - MORE COMPACT HEADER */
+    .flowchart-header {
+        margin-bottom: 8px !important; /* Reduced from default */
+        padding-bottom: 6px !important; /* Less padding */
+    }
+    
+    .flowchart-title {
+        font-size: 1rem !important; /* Slightly smaller */
+    }
+    
+    .flowchart-stats {
+        font-size: 0.8rem !important; /* Smaller stats */
+        padding: 4px 10px !important;
+    }
+}
+
+/* MOBILE NAVIGATE BUTTON - MOBILE ONLY */
+.mobile-navigate-button {
+    display: none; /* Hidden by default (desktop) */
+}
+
+@media (max-width: 768px) {
+    /* MOBILE ONLY - Show navigate button above search */
+    .mobile-navigate-button {
+        display: block !important;
+        text-align: center;
+        padding: 8px 0;
+        margin-bottom: 12px !important;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    }
+    
+    .navigate-from-create-mobile {
+        background: #27ae60 !important;
+        color: white !important;
+        font-size: 0.95rem !important;
+        padding: 12px 20px !important;
+        border-radius: 8px !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3) !important;
+        width: 100% !important;
+        max-width: 280px !important;
+        font-weight: 600 !important;
+    }
+    
+    .navigate-from-create-mobile:hover {
+        background: #229954 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 14px rgba(39, 174, 96, 0.4) !important;
+    }
+    
+    /* MOBILE ONLY - Hide desktop navigate button */
+    .sidebar .navigate-from-create {
+        display: none !important;
+    }
+}
+
+/* DESKTOP ONLY - Ensure desktop button stays visible */
+@media (min-width: 769px) {
+    .mobile-navigate-button {
+        display: none !important;
+    }
+    
+    .sidebar .navigate-from-create {
+        display: block !important;
+    }
+    
+    /* Ensure desktop canvas is unchanged */
+    #flowchart-canvas {
+        /* Desktop styles remain exactly as they were */
+        height: 100%; 
+        /* All other desktop properties unchanged */
+    }
+}
+/* =================================
+   MOBILE FULL-HEIGHT CANVAS FIX
+   Replace the existing mobile section in style.css with this
+   ================================= */
+
+//* =================================
+   MOBILE LAYOUT - FIXED ORDER AND HEIGHT
+   ================================= */
+
+/* Mobile Layout Adjustments */
+@media (max-width: 768px) {
+    /* Show mobile elements */
+    .mobile-nav {
+        display: flex;
+    }
+    
+    .mobile-fab {
+        display: block;
+    }
+    
+    /* Hide desktop sidebar */
+    .sidebar {
+        display: none;
+    }
+    
+    /* Container adjustments */
+    .container {
+        padding: 70px 10px 20px 10px;
+        min-height: 100vh;
+        height: auto;
+        overflow: visible;
+    }
+    
+    /* Main layout */
+    .main-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: calc(100vh - 90px);
+        gap: 0;
+    }
+    
+    .main-content {
+        flex: 1;
+        height: auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* CRITICAL: Fixed order for mobile elements */
+    .flowchart-panel {
+        height: auto;
+        margin-bottom: 0;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        order: 1;
+    }
+    
+    /* 1. Mobile navigate button - FIRST */
+    .mobile-navigate-button {
+        order: 1;
+        display: block !important;
+        text-align: center;
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .navigate-from-create-mobile {
+        background: #27ae60 !important;
+        color: white !important;
+        font-size: 0.95rem !important;
+        padding: 14px 20px !important;
+        border-radius: 10px !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3) !important;
+        width: 100% !important;
+        font-weight: 600 !important;
+    }
+    
+    .navigate-from-create-mobile:hover {
+        background: #229954 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 14px rgba(39, 174, 96, 0.4) !important;
+    }
+    
+    /* 2. Flowchart header - SECOND */
+    .flowchart-header {
+        order: 2;
+        margin-bottom: 15px;
+        padding: 12px 15px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .flowchart-title {
+        font-size: 1.1rem;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+    
+    .flowchart-stats {
+        text-align: center;
+        align-self: center;
+        margin-bottom: 0;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+    }
+    
+    /* 3. Search container - THIRD */
+    .search-container {
+        order: 3;
+        margin-bottom: 15px;
+        padding: 10px 15px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* 4. CANVAS - FOURTH - MAXIMUM AVAILABLE HEIGHT */
+    #flowchart-canvas {
+        order: 4;
+        /* Calculate height: viewport - nav bar - all other elements */
+        height: calc(100vh - 70px - 60px - 80px - 60px - 40px) !important;
+        min-height: 400px !important; /* Minimum fallback */
+        max-height: calc(100vh - 310px) !important;
+        
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        
+        /* Enhanced scrolling */
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: auto !important;
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
+        will-change: scroll-position;
+        
+        flex: none;
+    }
+    #flowchart-canvas {
+    height: calc(100vh - 450px) !important;
+    min-height: 250px !important;
+    max-height: calc(100vh - 400px) !important;
+    padding: 8px;
+}
+    #flowchart-canvas {
+    height: calc(100vh - 65px - 55px - 75px - 55px - 35px) !important;
+    min-height: 350px !important;
+    max-height: calc(100vh - 285px) !important;
+    
+    /* 5. Actions - LAST */
+    .flowchart-actions {
+        order: 5;
+        flex-direction: column;
+        gap: 10px;
+        margin: 0;
+        padding: 15px;
+        background: rgba(255,255,255,0.95);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        align-items: stretch;
+    }
+    
+    .flowchart-actions .btn,
+    .flowchart-actions .file-input-wrapper,
+    .example-dropdown {
+        flex: none;
+        max-width: none;
+        min-width: auto;
+        width: 100%;
+        margin: 0;
+    }
+    
+    .flowchart-actions .btn {
+        padding: 12px 18px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+    
+    .flowchart-actions .file-input-label {
+        padding: 12px 18px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+    
+    .example-dropdown-btn {
+        padding: 12px 18px !important;
+        font-size: 0.85rem !important;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+    
+    /* Enhanced flowchart content */
+    #flowchart-content {
+        min-width: 150vw !important;
+        min-height: 150vh !important;
+        touch-action: auto;
+        contain: layout style paint;
+        padding: 20px !important;
+    }
+    
+    /* Better scrollbars */
+    #flowchart-canvas::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+        background: rgba(0,0,0,0.05);
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.7);
+        border-radius: 4px;
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb:active {
+        background: rgba(102, 126, 234, 0.9);
+    }
+    
+    /* Hide desktop navigate button on mobile */
+    .sidebar .navigate-from-create {
+        display: none !important;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+    .container {
+        padding: 65px 5px 15px 5px;
+    }
+    
+    #flowchart-canvas {
+        height: calc(100vh - 65px - 55px - 75px - 55px - 35px) !important;
+        min-height: 350px !important;
+        max-height: calc(100vh - 285px) !important;
+        padding: 8px;
+    }
+    
+    .flowchart-actions .btn,
+    .flowchart-actions .file-input-label,
+    .example-dropdown-btn {
+        padding: 10px 15px !important;
+        font-size: 0.8rem !important;
+    }
+}
+/* Extra small mobile devices - maintain full height */
+@media (max-width: 480px) {
+    .container {
+        padding: 65px 5px 15px 5px;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    #flowchart-canvas {
+        /* Still full height on small devices */
+        height: calc(100vh - 85px) !important;
+        min-height: calc(100vh - 85px) !important;
+        max-height: calc(100vh - 85px) !important;
+        padding: 8px;
+    }
+    
+    #flowchart-content {
+        min-width: 140vw !important;
+        min-height: 180vh !important;
+        padding: 15px !important;
+    }
+    
+    .flowchart-actions {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .flowchart-actions .btn,
+    .flowchart-actions .file-input-label,
+    .example-dropdown-btn {
+        padding: 12px 18px !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+/* Landscape mobile - still maintain full height */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container {
+        padding: 65px 10px 15px 10px;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    #flowchart-canvas {
+        height: calc(100vh - 85px) !important;
+        min-height: calc(100vh - 85px) !important;
+        max-height: calc(100vh - 85px) !important;
+        padding: 8px;
+    }
+    
+    #flowchart-content {
+        min-width: 200vw !important; /* More horizontal space in landscape */
+        min-height: 150vh !important;
+        padding: 15px !important;
+    }
+}
+
+/* Desktop - ensure no changes */
+@media (min-width: 769px) {
+    .mobile-navigate-button {
+        display: none !important;
+    }
+    
+    .sidebar .navigate-from-create {
+        display: block !important;
+    }
+    
+    /* Desktop canvas remains unchanged */
+    #flowchart-canvas {
+        height: 100%;
+        flex: 1;
+        min-height: 0;
+    }
+    
+    .container {
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .main-layout {
+        height: calc(100vh - 40px);
+    }
+}
+
+}
+/* Force hide zoom controls in navigate mode */
+#navigate-mode .canvas-zoom-controls,
+.canvas-zoom-controls[style*="display: none"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Ensure they only show in create mode on desktop */
+#create-mode .canvas-zoom-controls {
+    display: flex !important;
+}
+
+
+/* =================================
+   MOBILE ACTIONS CLEANUP - MOVE TO MENU
+   Add this CSS to style.css
+   ================================= */
+
+@media (max-width: 768px) {
+    /* HIDE flowchart actions on mobile completely */
+    .flowchart-actions {
+        display: none !important;
+    }
+    
+    /* MAXIMIZE canvas height by removing actions space */
+    #flowchart-canvas {
+        /* Remove the space previously used by actions */
+        height: calc(100vh - 65px - 55px - 75px - 25px) !important;
+        min-height: calc(100vh - 220px) !important;
+        max-height: calc(100vh - 220px) !important;
+        padding: 10px;
+        margin-bottom: 20px; /* Bottom spacing */
+    }
+    
+    /* Add actions to mobile menu - styling for new section */
+    .mobile-menu-actions {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 2px solid #e0e0e0;
+    }
+    
+    .mobile-menu-actions h3 {
+        margin: 0 0 15px 0;
+        font-size: 1.1rem;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .mobile-menu-actions .btn,
+    .mobile-menu-actions .file-input-wrapper,
+    .mobile-menu-actions .example-dropdown {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .mobile-menu-actions .btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 8px;
+        display: block;
+        text-align: center;
+    }
+    
+    .mobile-menu-actions .file-input-label {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 8px;
+        display: block;
+        text-align: center;
+    }
+    
+    .mobile-menu-actions .example-dropdown-btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 8px;
+        width: 100%;
+        padding: 12px 16px !important;
+    }
+    
+}
+
+
+/* Extra small devices get even more canvas space */
+@media (max-width: 480px) {
+    #flowchart-canvas {
+        height: calc(100vh - 200px) !important;
+        min-height: calc(100vh - 200px) !important;
+        max-height: calc(100vh - 200px) !important;
+    }
+}
+
+/* =================================
+   FIX CANVAS OVERFLOW ISSUES
+   Replace the mobile canvas section in your style.css
+   ================================= */
+
+@media (max-width: 768px) {
+    /* MOBILE LAYOUT - PREVENT CANVAS CUTOFF */
+    
+    /* Container adjustments - better space management */
+    .container {
+        padding: 70px 10px 10px 10px !important; /* Reduced bottom padding */
+        min-height: 100vh;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Main layout - use remaining space */
+    .main-layout {
+        flex-direction: column;
+        height: auto;
+        flex: 1;
+        min-height: 0;
+        gap: 0;
+        display: flex;
+    }
+    
+    .main-content {
+        flex: 1;
+        height: auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Flowchart panel - use all available space */
+    .flowchart-panel {
+        height: auto;
+        flex: 1;
+        margin-bottom: 0;
+        padding: 10px !important; /* Reduced padding */
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    
+    /* FIXED ORDER AND SIZING */
+    
+    /* 1. Mobile navigate button - COMPACT */
+    .mobile-navigate-button {
+        order: 1;
+        display: block !important;
+        text-align: center;
+        padding: 8px 10px !important; /* More compact */
+        margin-bottom: 10px !important;
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+    
+    .navigate-from-create-mobile {
+        background: #27ae60 !important;
+        color: white !important;
+        font-size: 0.85rem !important; /* Smaller font */
+        padding: 10px 16px !important; /* More compact */
+        border-radius: 6px !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3) !important;
+        width: 100% !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 2. Flowchart header - COMPACT */
+    .flowchart-header {
+        order: 2;
+        margin-bottom: 10px !important;
+        padding: 8px 10px !important; /* More compact */
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+    
+    .flowchart-title {
+        font-size: 0.95rem !important; /* Smaller */
+        text-align: left;
+        margin-bottom: 0;
+    }
+    
+    .flowchart-stats {
+        text-align: right;
+        margin-bottom: 0;
+        font-size: 0.75rem !important; /* Smaller */
+        padding: 3px 8px !important;
+    }
+    
+    /* 3. Search container - COMPACT */
+    .search-container {
+        order: 3;
+        margin-bottom: 10px !important;
+        padding: 6px 10px !important; /* More compact */
+        background: rgba(255,255,255,0.95);
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        flex-shrink: 0;
+    }
+    
+    .search-input-wrapper input {
+        padding: 6px 30px 6px 10px !important; /* More compact */
+        font-size: 0.8rem !important;
+    }
+    
+    /* 4. CANVAS - MAXIMUM AVAILABLE SPACE */
+    #flowchart-canvas {
+        order: 4;
+        /* USE ALL REMAINING SPACE */
+        flex: 1 !important;
+        min-height: 0 !important;
+        height: auto !important; /* Let flexbox handle height */
+        
+        padding: 8px !important; /* Reduced padding */
+        border-radius: 6px !important;
+        margin-bottom: 0 !important; /* No bottom margin */
+        
+        /* Enhanced scrolling */
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: auto !important;
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
+        will-change: scroll-position;
+        
+        /* Ensure it doesn't shrink */
+        flex-shrink: 0;
+        /* Ensure proper box sizing */
+        box-sizing: border-box !important;
+    }
+    
+    /* Enhanced flowchart content - prevent overflow */
+    #flowchart-content {
+        min-width: 150vw !important;
+        min-height: 120vh !important; /* Reduced slightly */
+        touch-action: auto;
+        contain: layout style paint;
+        padding: 15px !important; /* Reduced padding */
+        box-sizing: border-box;
+        
+        /* Ensure content doesn't cause overflow */
+        position: relative;
+        width: max-content;
+        height: max-content;
+    }
+    
+    /* Better scrollbars */
+    #flowchart-canvas::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+        background: rgba(0,0,0,0.05);
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.7);
+        border-radius: 3px;
+    }
+    
+    #flowchart-canvas::-webkit-scrollbar-thumb:active {
+        background: rgba(102, 126, 234, 0.9);
+    }
+    
+    /* ACTIONS ARE HIDDEN ON MOBILE (per your request) */
+    .flowchart-actions {
+        display: none !important;
+    }
+}
+
+/* Extra small devices - even more compact */
+@media (max-width: 480px) {
+    .container {
+        padding: 65px 5px 5px 5px !important; /* Even more compact */
+    }
+    
+    .flowchart-panel {
+        padding: 8px !important;
+    }
+    
+    #flowchart-canvas {
+        padding: 6px !important;
+    }
+    
+    #flowchart-content {
+        min-width: 140vw !important;
+        min-height: 110vh !important;
+        padding: 12px !important;
+    }
+    
+    .mobile-navigate-button,
+    .flowchart-header,
+    .search-container {
+        padding: 6px 8px !important;
+        margin-bottom: 8px !important;
+    }
+}
+
+/* Landscape mobile - optimize for horizontal space */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container {
+        padding: 65px 8px 5px 8px !important;
+    }
+    
+    #flowchart-content {
+        min-width: 200vw !important; /* More horizontal space */
+        min-height: 120vh !important;
+        padding: 12px !important;
+    }
+    
+    /* Even more compact header in landscape */
+    .flowchart-header {
+        padding: 6px 8px !important;
+    }
+    
+    .search-container {
+        padding: 4px 8px !important;
+    }
+}
+
+/* Desktop - ensure no changes */
+@media (min-width: 769px) {
+    /* Desktop styles remain unchanged */
+    .container {
+        height: 100vh;
+        overflow: hidden;
+        padding: 20px;
+    }
+    
+    .main-layout {
+        height: calc(100vh - 40px);
+        display: flex;
+        flex-direction: row;
+    }
+    
+    #flowchart-canvas {
+        height: 100%;
+        flex: 1;
+        min-height: 0;
+    }
+}
+
+/* Fix the dropdown button width to match other buttons (360px) */
+@media (max-width: 768px) {
+    /* Make sure the dropdown container takes full width */
+    .mobile-menu-actions .example-dropdown {
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Force the button to take full width */
+    .mobile-menu-actions .example-dropdown-btn {
+        width: 100% !important;
+        min-width: 360px !important; /* Force same width as other buttons */
+        padding: 12px 16px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        display: block !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+        margin-bottom: 10px !important;
+        
+        background: #f39c12 !important;
+        color: white !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
     }
 }

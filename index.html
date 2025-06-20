@@ -54,10 +54,36 @@
             <button type="button" class="btn btn-secondary btn-large hidden" id="mobile-cancel-edit-btn" onclick="cancelMobileEdit()">Cancel Edit</button>
         </form>
         
-        <!-- Navigation Button -->
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
-            <button class="btn btn-primary btn-large" onclick="switchToNavigateFromMobile()">
-                🔁 Navigate Flowchart
+        <!-- NEW: Flowchart Actions Section -->
+        <div class="mobile-menu-actions">
+            <h3>📊 Flowchart Actions</h3>
+            
+            <button class="btn btn-success" onclick="exportFlowchart()">
+                💾 Export JSON
+            </button>
+            
+            <div class="file-input-wrapper">
+                <input type="file" id="mobile-import-file" accept=".json" onchange="importFlowchart(event)">
+                <label for="mobile-import-file" class="file-input-label">
+                    📁 Import JSON
+                </label>
+            </div>
+            
+            <div class="example-dropdown">
+    <button class="example-dropdown-btn" onclick="toggleMobileExampleDropdown()">
+        🎮 Load Example
+        <span id="mobile-dropdown-arrow">▼</span>
+    </button>
+    <div class="example-dropdown-content" id="mobile-example-dropdown">
+
+        <div class="example-option" onclick="loadExample('should-i-eat-it')">
+            🍱 Should I Eat It?
+        </div>
+    </div>
+</div>
+            
+            <button class="btn btn-danger" onclick="clearFlowchart()">
+                🗑️ Clear All
             </button>
         </div>
     </div>
@@ -81,10 +107,7 @@
                        <h1>📋 Think Track</h1>
                        <p>Create and navigate interactive flowcharts</p>
                        
-                       <!-- Navigate button under logo -->
-                       <button class="btn btn-primary btn-large navigate-from-create">
-                           🔁 Navigate Flowchart
-                       </button>
+                    <!-- Navigate button moved to mobile heading area -->
                    </div>
                    
                    <div class="panel form-panel">
@@ -137,16 +160,23 @@
                            <div class="flowchart-title">📊 Current Flowchart</div>
                            <div class="flowchart-stats" id="flowchart-stats">0 nodes</div>
                        </div>
-                       
-                       <!-- Search Bar -->
-                       <div class="search-container" id="search-container">
-                           <div class="search-input-wrapper">
-                               <input type="text" id="search-input" placeholder="🔍 Search nodes by ID or instruction text..." />
-                               <button class="search-clear-btn" onclick="clearSearch()" title="Clear search">×</button>
-                           </div>
-                           <div class="search-results" id="search-results"></div>
-                       </div>
-                       
+        
+                     
+
+                        <!-- Mobile Navigate Button - appears above search on mobile only -->
+                        <div class="mobile-navigate-button" style="margin-bottom: 15px;">
+                            <button class="btn btn-primary btn-large navigate-from-create-mobile">
+                                🔁 Navigate Flowchart
+                            </button>
+                        </div>
+                        <!-- Search Bar - moved below canvas on mobile -->
+                        <div class="search-container" id="search-container">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="search-input" placeholder="🔍 Search nodes by ID or instruction text..." />
+                                <button class="search-clear-btn" onclick="clearSearch()" title="Clear search">×</button>
+                            </div>
+                            <div class="search-results" id="search-results"></div>
+                        </div>
                        <!-- Flowchart Canvas for Tree Visualization -->
                        <div id="flowchart-canvas">
                            <div id="flowchart-content">
@@ -157,7 +187,6 @@
                                </div>
                            </div>
                        </div>
-
                        <div class="flowchart-actions">
                            <button class="btn btn-success" onclick="exportFlowchart()">💾 Export JSON</button>
                            <div class="file-input-wrapper">
@@ -175,6 +204,7 @@
                                    </div>
                                </div>
                            </div>
+                           
                            <button class="btn btn-danger" onclick="clearFlowchart()">🗑️ Clear All</button>
                        </div>
                    </div>
