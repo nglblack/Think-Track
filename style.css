@@ -3751,3 +3751,204 @@ textarea {
         display: none !important;
     }
 }
+
+/* Fix mobile menu scrolling issues */
+@media (max-width: 768px) {
+    
+    /* Ensure mobile side menu takes full height and is scrollable */
+    .mobile-side-menu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 90%;
+        max-width: 400px;
+        height: 100vh !important; /* Full viewport height */
+        background: white;
+        z-index: 3000;
+        transition: right 0.3s ease;
+        overflow-y: auto !important; /* Enable vertical scrolling */
+        overflow-x: hidden !important; /* Prevent horizontal scroll */
+        -webkit-overflow-scrolling: touch !important; /* iOS momentum scrolling */
+        box-shadow: -2px 0 20px rgba(0,0,0,0.3);
+    }
+    
+    .mobile-side-menu.open {
+        right: 0;
+    }
+    
+    /* Fix mobile menu content to allow proper scrolling */
+    .mobile-menu-content {
+        padding: 20px !important;
+        padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)) !important; /* Extra bottom padding */
+        min-height: calc(100vh - 80px) !important; /* Ensure content is tall enough to scroll */
+        overflow: visible !important;
+        display: block !important;
+    }
+    
+    /* Ensure form elements don't get cut off */
+    .mobile-menu-content form {
+        margin-bottom: 30px !important;
+    }
+    
+    /* Add space after mobile menu actions */
+    .mobile-menu-actions {
+        margin-bottom: 40px !important;
+        padding-bottom: 20px !important;
+    }
+    
+    /* Fix mobile menu header to not interfere with scrolling */
+    .mobile-menu-header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Ensure mobile options container is properly contained */
+    .mobile-menu-content .options-container {
+        margin-bottom: 20px !important;
+    }
+    
+    /* Add visual scroll indicator */
+    .mobile-side-menu::-webkit-scrollbar {
+        width: 4px;
+        background: rgba(0,0,0,0.1);
+    }
+    
+    .mobile-side-menu::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 2px;
+    }
+    
+    .mobile-side-menu::-webkit-scrollbar-thumb:hover {
+        background: rgba(102, 126, 234, 0.8);
+    }
+}
+
+/* Extra small devices need even more bottom padding */
+@media (max-width: 480px) {
+    .mobile-menu-content {
+        padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    
+    .mobile-menu-actions {
+        margin-bottom: 50px !important;
+        padding-bottom: 30px !important;
+    }
+}
+/* Move the remove option button to top-right corner of each option box */
+@media (max-width: 768px) {
+    
+    /* Style the option item as a positioned container */
+    .option-item {
+        display: block !important; /* Change from flex to block */
+        position: relative !important;
+        background: #f8f9fa !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        padding: 15px !important;
+        padding-top: 35px !important; /* Make room for the X button */
+        margin-bottom: 15px !important;
+    }
+    
+    /* Position remove button in top-right corner */
+    .option-item .remove-option {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        background: #e74c3c !important;
+        color: white !important;
+        border: none !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.3s ease !important;
+        z-index: 10 !important;
+    }
+    
+    .option-item .remove-option:hover {
+        background: #c0392b !important;
+        transform: scale(1.1) !important;
+    }
+    
+    .option-item .remove-option:active {
+        transform: scale(0.9) !important;
+    }
+    
+    /* Stack the input fields vertically */
+    .option-item input {
+        width: 100% !important;
+        margin-bottom: 10px !important;
+        padding: 10px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 6px !important;
+        font-size: 0.9rem !important;
+        box-sizing: border-box !important;
+    }
+    
+    .option-item input:last-of-type {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Add a subtle header to each option box */
+    .option-item::before {
+        content: 'Option ' counter(option-counter);
+        counter-increment: option-counter;
+        position: absolute;
+        top: 8px;
+        left: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Reset counter for each options container */
+    .options-container {
+        counter-reset: option-counter;
+        border: 2px dashed #ddd !important;
+        border-radius: 8px !important;
+        padding: 15px !important;
+        margin-top: 10px !important;
+    }
+}
+
+/* Desktop - keep existing layout but improve button positioning */
+@media (min-width: 769px) {
+    .option-item {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+        align-items: center;
+        position: relative;
+    }
+    
+    .option-item .remove-option {
+        background: #e74c3c;
+        color: white;
+        border: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .option-item .remove-option:hover {
+        background: #c0392b;
+        transform: scale(1.1);
+    }
+}
