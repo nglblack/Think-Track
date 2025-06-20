@@ -4,6 +4,9 @@ let currentNodeId = 'start';
 let navigationHistory = [];
 let editingNodeId = null;
 let currentImageData = null;
+let selectedMobileNode = null;
+let mobileEditingNodeId = null;
+let currentMobileImageData = null;
 // Enhanced Canvas Zoom and Pan Functionality
 let canvasZoom = {
     scale: 1.0,
@@ -254,189 +257,256 @@ function toggleExampleDropdown() {
         return;
     }
     
-    console.log('Current dropdown classes:', dropdown.className);
-    console.log('Current dropdown display:', window.getComputedStyle(dropdown).display);
-    console.log('Current dropdown visibility:', window.getComputedStyle(dropdown).visibility);
-    console.log('Current dropdown position:', window.getComputedStyle(dropdown).position);
-    
     // Toggle the dropdown
-    dropdown.classList.toggle('show');
-    arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
+    const isCurrentlyOpen = dropdown.classList.contains('show');
     
-    console.log('After toggle - dropdown classes:', dropdown.className);
-    console.log('Dropdown is now:', dropdown.classList.contains('show') ? 'VISIBLE' : 'HIDDEN');
-    
-    // Force visibility if it has the show class
-    if (dropdown.classList.contains('show')) {
-        dropdown.style.display = 'block';
-        dropdown.style.visibility = 'visible';
-        dropdown.style.opacity = '1';
-        dropdown.style.zIndex = '2000';
-        dropdown.style.position = 'absolute';
-        console.log('FORCED dropdown visibility');
+    if (isCurrentlyOpen) {
+        dropdown.classList.remove('show');
+        arrow.textContent = '▼';
+        console.log('Desktop dropdown CLOSED');
+    } else {
+        dropdown.classList.add('show');
+        arrow.textContent = '▲';
+        console.log('Desktop dropdown OPENED');
     }
 }
-// Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-   const dropdown = document.getElementById('example-dropdown');
-   const button = document.querySelector('.example-dropdown-btn');
-   
-   if (!button.contains(event.target) && !dropdown.contains(event.target)) {
-       dropdown.classList.remove('show');
-       document.getElementById('dropdown-arrow').textContent = '▼';
-   }
-});
-
-// REPLACE your existing loadExample function (around line 130) with this COMPLETE version:
 
 // REPLACE the loadExample function (around line 130) with this COMPLETE version:
 function loadExample(exampleKey) {
-    if (exampleFlowcharts[exampleKey]) {
-        if (Object.keys(flowchart).length > 0) {
-            if (!confirm('This will replace your current flowchart. Continue?')) {
-                return;
-            }
+    console.log('loadExample called with:', exampleKey);
+    
+    if (!exampleFlowcharts[exampleKey]) {
+        console.error('Example not found:', exampleKey);
+        alert('Example not found. Please try again.');
+        return;
+    }
+    
+    // Only show confirmation if there's actually existing data
+    if (Object.keys(flowchart).length > 0) {
+        if (!confirm('This will replace your current flowchart. Continue?')) {
+            return;
         }
-        
+    }
+    
+    try {
         // Use deep copy to preserve the example data structure
         flowchart = JSON.parse(JSON.stringify(exampleFlowcharts[exampleKey]));
         updateFlowchartDisplay();
         resetForm();
         
         // Close dropdown
-        document.getElementById('example-dropdown').classList.remove('show');
-        document.getElementById('dropdown-arrow').textContent = '▼';
+        const dropdown = document.getElementById('example-dropdown');
+        const arrow = document.getElementById('dropdown-arrow');
+        if (dropdown) dropdown.classList.remove('show');
+        if (arrow) arrow.textContent = '▼';
+        
+        // Close mobile dropdown too
+        const mobileDropdown = document.getElementById('mobile-example-dropdown');
+        const mobileArrow = document.getElementById('mobile-dropdown-arrow');
+        if (mobileDropdown) mobileDropdown.classList.remove('show');
+        if (mobileArrow) mobileArrow.textContent = '▼';
+        
+        // Close mobile menu if open
+        if (window.innerWidth <= 768) {
+            closeMobileMenu();
+        }
         
         alert(`Example "${exampleKey}" loaded successfully!`);
+        
+    } catch (error) {
+        console.error('Error loading example:', error);
+        alert('Error loading example: ' + error.message);
     }
 }
 // Add proper event listeners for example options
+// REMOVE the existing setupExampleDropdownEvents function entirely and replace with this:
+
 function setupExampleDropdownEvents() {
-    console.log('Setting up example dropdown events');
+    console.log('Setting up example dropdown events - SIMPLIFIED VERSION');
     
-    // Remove the existing event setup that conflicts with onclick
-    // Instead, ensure the dropdown button works correctly
-    
+    // Setup desktop dropdown button
     const desktopButton = document.querySelector('.example-dropdown-btn');
-    const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
-    
     if (desktopButton) {
-        // Remove any existing event listeners
-        desktopButton.removeEventListener('click', toggleExampleDropdown);
-        // Add fresh event listener
+        // Remove any existing onclick attribute
+        desktopButton.removeAttribute('onclick');
+        
+        // Add single event listener
         desktopButton.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Desktop button clicked via event listener');
+            console.log('Desktop dropdown clicked');
             toggleExampleDropdown();
         });
-        console.log('Desktop button event listener added');
     }
     
+    // Setup mobile dropdown button
+    const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
     if (mobileButton) {
-        mobileButton.removeEventListener('click', toggleMobileExampleDropdown);
+        // Remove any existing onclick attribute
+        mobileButton.removeAttribute('onclick');
+        
+        // Add single event listener
         mobileButton.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('Mobile button clicked via event listener');
+            console.log('Mobile dropdown clicked');
             toggleMobileExampleDropdown();
         });
-        console.log('Mobile button event listener added');
     }
     
-    // Direct option click handlers (since onclick attributes might not work)
-    document.querySelectorAll('#example-dropdown .example-option').forEach(option => {
-        option.addEventListener('click', function(e) {
+    // Setup dropdown options (both desktop and mobile)
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('example-option')) {
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('Desktop example option clicked directly');
-            
-            // Get the example key from the text content or data attribute
-            const text = this.textContent.trim();
-            let exampleKey = null;
-            
+            const text = e.target.textContent.trim();
             if (text.includes('Should I Eat It?')) {
-                exampleKey = 'should-i-eat-it';
+                loadExample('should-i-eat-it');
             }
-            
-            if (exampleKey) {
-                console.log('Loading example:', exampleKey);
-                loadExample(exampleKey);
-            } else {
-                console.error('Could not determine example key from:', text);
-            }
-        });
+        }
     });
     
-    document.querySelectorAll('#mobile-example-dropdown .example-option').forEach(option => {
-        option.addEventListener('click', function(e) {
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        // Close desktop dropdown
+        const desktopDropdown = document.getElementById('example-dropdown');
+        const desktopBtn = document.querySelector('.example-dropdown-btn');
+        
+        if (desktopDropdown && desktopBtn && 
+            !desktopBtn.contains(e.target) && 
+            !desktopDropdown.contains(e.target)) {
+            desktopDropdown.classList.remove('show');
+            const arrow = document.getElementById('dropdown-arrow');
+            if (arrow) arrow.textContent = '▼';
+        }
+        
+        // Close mobile dropdown
+        const mobileDropdown = document.getElementById('mobile-example-dropdown');
+        const mobileBtn = document.querySelector('.mobile-side-menu .example-dropdown-btn');
+        
+        if (mobileDropdown && mobileBtn && 
+            !mobileBtn.contains(e.target) && 
+            !mobileDropdown.contains(e.target)) {
+            mobileDropdown.classList.remove('show');
+            const mobileArrow = document.getElementById('mobile-dropdown-arrow');
+            if (mobileArrow) mobileArrow.textContent = '▼';
+        }
+    });
+}
+function setupDesktopExampleDropdown() {
+    // Setup desktop dropdown button
+    const button = document.querySelector('.example-dropdown-btn');
+    if (button) {
+        // Remove any existing onclick
+        button.removeAttribute('onclick');
+        
+        // Clone to remove all event listeners
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        // Add single click listener
+        newButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleExampleDropdown();
+        });
+    }
+    
+    // Setup desktop dropdown options
+    const options = document.querySelectorAll('#example-dropdown .example-option');
+    options.forEach(option => {
+        // Remove onclick attribute
+        option.removeAttribute('onclick');
+        
+        // Clone to remove listeners
+        const newOption = option.cloneNode(true);
+        option.parentNode.replaceChild(newOption, option);
+        
+        // Add click listener
+        newOption.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('Mobile example option clicked directly');
-            
             const text = this.textContent.trim();
-            let exampleKey = null;
-            
             if (text.includes('Should I Eat It?')) {
-                exampleKey = 'should-i-eat-it';
-            }
-            
-            if (exampleKey) {
-                console.log('Loading example:', exampleKey);
-                loadExample(exampleKey);
+                loadExample('should-i-eat-it');
             }
         });
     });
-    
-    console.log('Example dropdown events setup complete');
 }
 
-// ADD this debugging function to check dropdown state:
-function debugDropdown() {
-    console.log('=== DROPDOWN DEBUG ===');
-    
-    const button = document.querySelector('.example-dropdown-btn');
-    const dropdown = document.getElementById('example-dropdown');
-    const arrow = document.getElementById('dropdown-arrow');
-    
-    console.log('Button element:', button);
-    console.log('Dropdown element:', dropdown);
-    console.log('Arrow element:', arrow);
-    
-    if (dropdown) {
-        const styles = window.getComputedStyle(dropdown);
-        console.log('Dropdown computed styles:');
-        console.log('- display:', styles.display);
-        console.log('- visibility:', styles.visibility);
-        console.log('- opacity:', styles.opacity);
-        console.log('- position:', styles.position);
-        console.log('- z-index:', styles.zIndex);
-        console.log('- top:', styles.top);
-        console.log('- bottom:', styles.bottom);
-        console.log('- left:', styles.left);
-        console.log('- right:', styles.right);
+function setupMobileExampleDropdown() {
+    // Setup mobile dropdown button
+    const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
+    if (mobileButton) {
+        // Remove any existing onclick
+        mobileButton.removeAttribute('onclick');
         
-        console.log('Dropdown classes:', dropdown.className);
+        // Clone to remove all event listeners
+        const newMobileButton = mobileButton.cloneNode(true);
+        mobileButton.parentNode.replaceChild(newMobileButton, mobileButton);
         
-        const rect = dropdown.getBoundingClientRect();
-        console.log('Dropdown bounding rect:', rect);
-        
-        // Check if dropdown has any content
-        console.log('Dropdown innerHTML:', dropdown.innerHTML);
-        console.log('Dropdown children count:', dropdown.children.length);
+        // Add single click listener
+        newMobileButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleMobileExampleDropdown();
+        });
     }
     
-    if (button) {
-        const buttonRect = button.getBoundingClientRect();
-        console.log('Button bounding rect:', buttonRect);
-        console.log('Button onclick:', button.onclick);
-        console.log('Button event listeners:', button);
-    }
-    
-    console.log('=== END DROPDOWN DEBUG ===');
+    // Setup mobile dropdown options
+    const mobileOptions = document.querySelectorAll('#mobile-example-dropdown .example-option');
+    mobileOptions.forEach(option => {
+        // Remove onclick attribute
+        option.removeAttribute('onclick');
+        
+        // Clone to remove listeners
+        const newOption = option.cloneNode(true);
+        option.parentNode.replaceChild(newOption, option);
+        
+        // Add click listener
+        newOption.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const text = this.textContent.trim();
+            if (text.includes('Should I Eat It?')) {
+                loadExample('should-i-eat-it');
+            }
+        });
+    });
 }
+
+function setupDropdownOutsideClick() {
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        // Handle desktop dropdown
+        const dropdown = document.getElementById('example-dropdown');
+        const button = document.querySelector('.example-dropdown-btn');
+        
+        if (dropdown && button && 
+            !button.contains(event.target) && 
+            !dropdown.contains(event.target)) {
+            dropdown.classList.remove('show');
+            const arrow = document.getElementById('dropdown-arrow');
+            if (arrow) arrow.textContent = '▼';
+        }
+        
+        // Handle mobile dropdown
+        const mobileDropdown = document.getElementById('mobile-example-dropdown');
+        const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
+        
+        if (mobileDropdown && mobileButton && 
+            !mobileButton.contains(event.target) && 
+            !mobileDropdown.contains(event.target)) {
+            mobileDropdown.classList.remove('show');
+            const mobileArrow = document.getElementById('mobile-dropdown-arrow');
+            if (mobileArrow) mobileArrow.textContent = '▼';
+        }
+    });
+}
+
 
 // Call this in browser console to debug: debugDropdown()
 function addOption() {
@@ -1038,7 +1108,7 @@ function renderNode(node, container) {
 
 // REPLACE the renderConnections function in main.js with this mobile-aware version
 function renderConnections(svg) {
-    console.log('Rendering connections...');
+    console.log('Rendering improved connections...');
     
     // Clear existing connections
     svg.innerHTML = '';
@@ -1061,42 +1131,28 @@ function renderConnections(svg) {
     defs.appendChild(marker);
     svg.appendChild(defs);
     
-    // MOBILE FIX: Get canvas padding offset
-    const canvas = document.getElementById('flowchart-canvas');
-    const content = document.getElementById('flowchart-content');
-    let offsetX = 0, offsetY = 0;
-    
-    if (canvas && window.innerWidth <= 768) {
-        // On mobile, account for canvas padding
-        const canvasStyle = window.getComputedStyle(canvas);
-        offsetX = parseInt(canvasStyle.paddingLeft) || 0;
-        offsetY = parseInt(canvasStyle.paddingTop) || 0;
-        
-        console.log('Mobile canvas offset:', offsetX, offsetY);
-    }
-    
     // Draw connections between nodes
     let connectionCount = 0;
-    Object.values(flowchart).forEach(node => {
-        node.options.forEach((option, index) => {
+    Object.values(flowchart).forEach(sourceNode => {
+        sourceNode.options.forEach((option, index) => {
             const targetNode = flowchart[option.nextNodeId];
             if (!targetNode) {
-                console.warn(`Target node "${option.nextNodeId}" not found for option "${option.label}" in node "${node.id}"`);
+                console.warn(`Target node "${option.nextNodeId}" not found for option "${option.label}" in node "${sourceNode.id}"`);
                 return;
             }
             
-            // Get connection points with mobile offset
-            const sourcePos = getNodeConnectionPointWithOffset(node, 'output', index, node.options.length, offsetX, offsetY);
-            const targetPos = getNodeConnectionPointWithOffset(targetNode, 'input', 0, 1, offsetX, offsetY);
+            // Get optimal connection points
+            const sourcePoint = getNodeConnectionPoint(sourceNode, 'output', index, sourceNode.options.length);
+            const targetPoint = getOptimalInputPoint(sourceNode, targetNode);
             
             // Create connection line
-            const line = createConnectionLine(sourcePos, targetPos, option.label);
+            const line = createConnectionLine(sourcePoint, targetPoint, option.label);
             svg.appendChild(line);
             connectionCount++;
         });
     });
     
-    console.log(`Rendered ${connectionCount} connections`);
+    console.log(`Rendered ${connectionCount} improved connections`);
 }
 
 // ADD this new helper function
@@ -1220,7 +1276,6 @@ function getNodeConnectionPointWithOffset(node, type, optionIndex = 0, totalOpti
 }
 
 
-// REPLACE the getNodeConnectionPoint function with this simplified version
 function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
     const nodeEl = document.getElementById(`node-${node.id}`);
     
@@ -1259,22 +1314,20 @@ function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
         // Fallback to stored position
         nodeX = node.position?.x || 0;
         nodeY = node.position?.y || 0;
-        nodeWidth = 280;
-        nodeHeight = 120;
+        nodeWidth = window.innerWidth <= 768 ? 280 : 350;
+        nodeHeight = window.innerWidth <= 768 ? 120 : 150;
     }
     
     if (type === 'input') {
-        // Input connection at top-center
-        return {
-            x: nodeX + nodeWidth / 2,
-            y: nodeY
-        };
+        // For input connections, we need to determine the best side based on the source node
+        // This is called when rendering connections TO this node
+        return getBestInputConnectionPoint(nodeX, nodeY, nodeWidth, nodeHeight);
     } else {
-        // Output connection logic
+        // For output connections, determine the best side based on the target node
         const targetNodeId = node.options[optionIndex]?.nextNodeId;
         const targetNode = flowchart[targetNodeId];
         
-        if (!targetNode) {
+        if (!targetNode || !targetNode.position) {
             // No target, default to right side
             return {
                 x: nodeX + nodeWidth,
@@ -1282,141 +1335,193 @@ function getNodeConnectionPoint(node, type, optionIndex = 0, totalOptions = 1) {
             };
         }
         
-        // Get target position
-        const targetEl = document.getElementById(`node-${targetNode.id}`);
-        let targetX, targetY;
+        return getBestOutputConnectionPoint(
+            nodeX, nodeY, nodeWidth, nodeHeight,
+            targetNode, optionIndex, totalOptions
+        );
+    }
+}
+function getBestInputConnectionPoint(nodeX, nodeY, nodeWidth, nodeHeight) {
+    // Return center points for all four sides - the connection logic will choose the best one
+    return {
+        top: { x: nodeX + nodeWidth / 2, y: nodeY },
+        right: { x: nodeX + nodeWidth, y: nodeY + nodeHeight / 2 },
+        bottom: { x: nodeX + nodeWidth / 2, y: nodeY + nodeHeight },
+        left: { x: nodeX, y: nodeY + nodeHeight / 2 }
+    };
+}
+
+function getBestOutputConnectionPoint(sourceX, sourceY, sourceWidth, sourceHeight, targetNode, optionIndex, totalOptions) {
+    // Get target position
+    const targetEl = document.getElementById(`node-${targetNode.id}`);
+    let targetX, targetY, targetWidth, targetHeight;
+    
+    if (targetEl) {
+        targetX = parseInt(targetEl.style.left) || targetNode.position?.x || 0;
+        targetY = parseInt(targetEl.style.top) || targetNode.position?.y || 0;
         
-        if (targetEl) {
-            targetX = parseInt(targetEl.style.left) || targetNode.position?.x || 0;
-            targetY = parseInt(targetEl.style.top) || targetNode.position?.y || 0;
-        } else {
-            targetX = targetNode.position?.x || 0;
-            targetY = targetNode.position?.y || 0;
-        }
+        const rect = targetEl.getBoundingClientRect();
+        targetWidth = rect.width;
+        targetHeight = rect.height;
         
-        // Simple direction logic
-        const deltaX = targetX - nodeX;
-        const deltaY = targetY - nodeY;
-        
-        // Choose connection point based on direction to target
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
-            // Horizontal connection
-            if (deltaX > 0) {
-                // Target is to the right
-                return {
-                    x: nodeX + nodeWidth,
-                    y: nodeY + nodeHeight / 2
-                };
-            } else {
-                // Target is to the left
-                return {
-                    x: nodeX,
-                    y: nodeY + nodeHeight / 2
-                };
-            }
-        } else {
-            // Vertical connection
-            if (deltaY > 0) {
-                // Target is below
-                return {
-                    x: nodeX + nodeWidth / 2,
-                    y: nodeY + nodeHeight
-                };
-            } else {
-                // Target is above
-                return {
-                    x: nodeX + nodeWidth / 2,
-                    y: nodeY
-                };
+        // Account for scaling
+        const content = document.getElementById('flowchart-content');
+        if (content) {
+            const transform = window.getComputedStyle(content).transform;
+            if (transform && transform !== 'none') {
+                try {
+                    const values = transform.split('(')[1].split(')')[0].split(',');
+                    const scaleX = parseFloat(values[0]) || 1;
+                    const scaleY = parseFloat(values[3]) || 1;
+                    
+                    targetWidth = targetWidth / scaleX;
+                    targetHeight = targetHeight / scaleY;
+                } catch (e) {
+                    // Ignore parsing errors
+                }
             }
         }
+    } else {
+        targetX = targetNode.position?.x || 0;
+        targetY = targetNode.position?.y || 0;
+        targetWidth = window.innerWidth <= 768 ? 280 : 350;
+        targetHeight = window.innerWidth <= 768 ? 120 : 150;
+    }
+    
+    // Calculate the centers of both nodes
+    const sourceCenterX = sourceX + sourceWidth / 2;
+    const sourceCenterY = sourceY + sourceHeight / 2;
+    const targetCenterX = targetX + targetWidth / 2;
+    const targetCenterY = targetY + targetHeight / 2;
+    
+    // Calculate the direction vector from source to target
+    const deltaX = targetCenterX - sourceCenterX;
+    const deltaY = targetCenterY - sourceCenterY;
+    
+    // Calculate the angle to determine the primary direction
+    const angle = Math.atan2(deltaY, deltaX);
+    const absAngle = Math.abs(angle);
+    
+    // Determine the best connection side based on angle
+    // Angles: 0° = right, 90° = down, 180° = left, 270° = up
+    
+    let connectionPoint;
+    const spacing = Math.min(20, sourceHeight / (totalOptions + 1));
+    const offset = (optionIndex - (totalOptions - 1) / 2) * spacing;
+    
+    if (absAngle <= Math.PI / 4) {
+        // Target is primarily to the RIGHT (0° ± 45°)
+        connectionPoint = {
+            x: sourceX + sourceWidth,
+            y: sourceCenterY + offset
+        };
+    } else if (absAngle >= 3 * Math.PI / 4) {
+        // Target is primarily to the LEFT (180° ± 45°)
+        connectionPoint = {
+            x: sourceX,
+            y: sourceCenterY + offset
+        };
+    } else if (angle > 0) {
+        // Target is primarily BELOW (90° ± 45°)
+        connectionPoint = {
+            x: sourceCenterX + offset,
+            y: sourceY + sourceHeight
+        };
+    } else {
+        // Target is primarily ABOVE (-90° ± 45°)
+        connectionPoint = {
+            x: sourceCenterX + offset,
+            y: sourceY
+        };
+    }
+    
+    return connectionPoint;
+}
+
+function getOptimalInputPoint(sourceNode, targetNode) {
+    const sourceEl = document.getElementById(`node-${sourceNode.id}`);
+    const targetEl = document.getElementById(`node-${targetNode.id}`);
+    
+    if (!sourceEl || !targetEl) {
+        // Fallback to top connection
+        return {
+            x: (targetNode.position?.x || 0) + 175, // Approximate center
+            y: (targetNode.position?.y || 0)
+        };
+    }
+    
+    // Get positions
+    const sourceX = parseInt(sourceEl.style.left) || 0;
+    const sourceY = parseInt(sourceEl.style.top) || 0;
+    const sourceRect = sourceEl.getBoundingClientRect();
+    let sourceWidth = sourceRect.width;
+    let sourceHeight = sourceRect.height;
+    
+    const targetX = parseInt(targetEl.style.left) || 0;
+    const targetY = parseInt(targetEl.style.top) || 0;
+    const targetRect = targetEl.getBoundingClientRect();
+    let targetWidth = targetRect.width;
+    let targetHeight = targetRect.height;
+    
+    // Account for scaling
+    const content = document.getElementById('flowchart-content');
+    if (content) {
+        const transform = window.getComputedStyle(content).transform;
+        if (transform && transform !== 'none') {
+            try {
+                const values = transform.split('(')[1].split(')')[0].split(',');
+                const scaleX = parseFloat(values[0]) || 1;
+                const scaleY = parseFloat(values[3]) || 1;
+                
+                sourceWidth = sourceRect.width / scaleX;
+                sourceHeight = sourceRect.height / scaleY;
+                targetWidth = targetRect.width / scaleX;
+                targetHeight = targetRect.height / scaleY;
+            } catch (e) {
+                // Ignore parsing errors
+            }
+        }
+    }
+    
+    // Calculate direction from source to target
+    const sourceCenterX = sourceX + sourceWidth / 2;
+    const sourceCenterY = sourceY + sourceHeight / 2;
+    const targetCenterX = targetX + targetWidth / 2;
+    const targetCenterY = targetY + targetHeight / 2;
+    
+    const deltaX = targetCenterX - sourceCenterX;
+    const deltaY = targetCenterY - sourceCenterY;
+    const angle = Math.atan2(deltaY, deltaX);
+    const absAngle = Math.abs(angle);
+    
+    // Choose the best input side based on where the source is relative to target
+    if (absAngle <= Math.PI / 4) {
+        // Source is to the RIGHT of target, connect to LEFT side
+        return {
+            x: targetX,
+            y: targetY + targetHeight / 2
+        };
+    } else if (absAngle >= 3 * Math.PI / 4) {
+        // Source is to the LEFT of target, connect to RIGHT side
+        return {
+            x: targetX + targetWidth,
+            y: targetY + targetHeight / 2
+        };
+    } else if (angle > 0) {
+        // Source is ABOVE target, connect to TOP side
+        return {
+            x: targetX + targetWidth / 2,
+            y: targetY
+        };
+    } else {
+        // Source is BELOW target, connect to BOTTOM side
+        return {
+            x: targetX + targetWidth / 2,
+            y: targetY + targetHeight
+        };
     }
 }
 
-function createConnectionLine(start, end, label) {
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    
-    // Create curved path with smart control points
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    
-    // Calculate the distance and direction
-    const deltaX = end.x - start.x;
-    const deltaY = end.y - start.y;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    // Adjust control points based on connection direction
-    let controlPoint1, controlPoint2;
-    
-    // For horizontal connections
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        const controlDistance = Math.min(distance * 0.4, 100);
-        controlPoint1 = { 
-            x: start.x + (deltaX > 0 ? controlDistance : -controlDistance), 
-            y: start.y 
-        };
-        controlPoint2 = { 
-            x: end.x - (deltaX > 0 ? controlDistance : -controlDistance), 
-            y: end.y 
-        };
-    }
-    // For vertical connections
-    else {
-        const controlDistance = Math.min(distance * 0.4, 80);
-        controlPoint1 = { 
-            x: start.x, 
-            y: start.y + (deltaY > 0 ? controlDistance : -controlDistance) 
-        };
-        controlPoint2 = { 
-            x: end.x, 
-            y: end.y - (deltaY > 0 ? controlDistance : -controlDistance) 
-        };
-    }
-    
-    const pathData = `M ${start.x} ${start.y} C ${controlPoint1.x} ${controlPoint1.y}, ${controlPoint2.x} ${controlPoint2.y}, ${end.x} ${end.y}`;
-    
-    path.setAttribute('d', pathData);
-    path.setAttribute('stroke', '#667eea');
-    path.setAttribute('stroke-width', '2');
-    path.setAttribute('fill', 'none');
-    path.setAttribute('marker-end', 'url(#arrowhead)');
-    
-    group.appendChild(path);
-    
-    // Add label if there's space and it's not too long
-    if (label && label.length < 20 && distance > 80) {
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        const labelX = (start.x + end.x) / 2;
-        const labelY = (start.y + end.y) / 2;
-        
-        text.setAttribute('x', labelX);
-        text.setAttribute('y', labelY);
-        text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('font-size', '11px');
-        text.setAttribute('font-weight', '600');
-        text.setAttribute('fill', '#667eea');
-        text.setAttribute('dy', '0.35em');
-        
-        // Add background rectangle for better readability
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        const textWidth = label.length * 7; // Approximate text width
-        const textHeight = 14;
-        
-        rect.setAttribute('x', labelX - textWidth / 2 - 2);
-        rect.setAttribute('y', labelY - textHeight / 2);
-        rect.setAttribute('width', textWidth + 4);
-        rect.setAttribute('height', textHeight);
-        rect.setAttribute('fill', 'white');
-        rect.setAttribute('stroke', '#667eea');
-        rect.setAttribute('stroke-width', '1');
-        rect.setAttribute('rx', '3');
-        
-        text.textContent = label;
-        group.appendChild(rect);
-        group.appendChild(text);
-    }
-    
-    return group;
-}
 
 // ALSO ADD this helper function if it's missing:
 function updateNodeConnections() {
@@ -3130,15 +3235,13 @@ function resetCanvasZoom() {
 // Initialize
 updateFlowchartDisplay();
 
-// REPLACE THE ENTIRE DOMContentLoaded EVENT WITH THIS:
-// REPLACE the entire DOMContentLoaded section in main.js with this:
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== DOM CONTENT LOADED - ENHANCED INITIALIZATION ===');
+    console.log('=== DOM CONTENT LOADED ===');
     
     // Initialize mobile features first
     if (window.innerWidth <= 768) {
         initializeMobileFeatures();
+        setTimeout(initializeMobileTouchAndZoom, 100);
     }
     
     // Initialize unified interaction system
@@ -3148,35 +3251,21 @@ document.addEventListener('DOMContentLoaded', function() {
     setupSearchEventListeners();
     setupCanvasControls();
     
-    // CRITICAL: Ensure navigate button is visible and functional
-    setTimeout(() => {
-        ensureNavigateButtonVisibility();
-        
-        // Double-check after a brief delay
-        setTimeout(() => {
-            const navigateBtn = document.querySelector('.navigate-from-create');
-            if (navigateBtn) {
-                console.log('Navigate button final check - Display:', navigateBtn.style.display);
-                console.log('Navigate button final check - Visibility:', navigateBtn.style.visibility);
-                console.log('Navigate button final check - Opacity:', navigateBtn.style.opacity);
-                
-                // Force visibility one more time if needed
-                if (window.innerWidth > 768) {
-                    navigateBtn.style.display = 'block';
-                    navigateBtn.style.visibility = 'visible';
-                    navigateBtn.style.opacity = '1';
-                }
-            } else {
-                console.error('CRITICAL: Navigate button still not found after initialization');
-            }
-        }, 500);
-    }, 100);
-    
-    // Setup example dropdown events
+    // CRITICAL: Setup example dropdowns AFTER DOM is ready
     setTimeout(() => {
         setupExampleDropdownEvents();
         console.log('Example dropdown events setup complete');
-    }, 200);
+        
+        // Debug dropdowns
+        setTimeout(() => {
+            debugDropdown();
+        }, 100);
+    }, 300);
+    
+    // Setup navigate button
+    setTimeout(() => {
+        ensureNavigateButtonVisibility();
+    }, 100);
     
     console.log('=== INITIALIZATION COMPLETE ===');
 });
@@ -3214,40 +3303,174 @@ function scrollToMobileButtons() {
         }
     }
 }
-// Also setup listeners immediately in case DOM is already loaded
-if (document.readyState !== 'loading') {
-    setupSearchEventListeners();
-    setupCanvasControls();
-    updateNavigateButtonState();
+
+function initializeMobileTouchAndZoom() {
+    if (window.innerWidth > 768) return;
     
-    // Add click handler for the navigate button
-    const navigateBtn = document.querySelector('.navigate-from-create');
-    if (navigateBtn) {
-        navigateBtn.removeAttribute('onclick');
+    console.log('Initializing mobile touch and zoom...');
+    
+    // Clean up existing listeners
+    removeMobileEventListeners();
+    
+    // Set up canvas references
+    mobileState.canvas = document.getElementById('flowchart-canvas');
+    mobileState.content = document.getElementById('flowchart-content');
+    
+    if (!mobileState.canvas || !mobileState.content) {
+        console.warn('Canvas or content not found for mobile touch');
+        return;
+    }
+    
+    // Add unified touch listeners
+    mobileState.canvas.addEventListener('touchstart', handleMobileTouchStart, { passive: false });
+    mobileState.canvas.addEventListener('touchmove', handleMobileTouchMove, { passive: false });
+    mobileState.canvas.addEventListener('touchend', handleMobileTouchEnd, { passive: true });
+    mobileState.canvas.addEventListener('touchcancel', handleMobileTouchEnd, { passive: true });
+    
+    console.log('Mobile touch handlers initialized');
+}
+
+function removeMobileEventListeners() {
+    const canvas = document.getElementById('flowchart-canvas');
+    if (!canvas) return;
+    
+    canvas.removeEventListener('touchstart', handleMobileTouchStart);
+    canvas.removeEventListener('touchmove', handleMobileTouchMove);
+    canvas.removeEventListener('touchend', handleMobileTouchEnd);
+    canvas.removeEventListener('touchcancel', handleMobileTouchEnd);
+}
+
+function handleMobileTouchStart(e) {
+    const touch = e.touches[0];
+    const target = e.target.closest('.flowchart-node');
+    
+    // Store touch info
+    mobileState.startTime = Date.now();
+    mobileState.startPos = { x: touch.clientX, y: touch.clientY };
+    mobileState.currentPos = { x: touch.clientX, y: touch.clientY };
+    
+    if (target) {
+        // Touching a node
+        mobileState.selectedNode = target;
+        mobileState.isTapping = true;
         
-        navigateBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (!isNavigationAvailable()) {
-                alert('Please create some nodes first before navigating your flowchart.');
-                return false;
+        // Visual feedback
+        target.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            if (!mobileState.isDragging) {
+                target.style.transform = '';
             }
-            switchMode('navigate');
-        });
+        }, 150);
+        
+        // Prevent scrolling when touching nodes
+        e.preventDefault();
+    } else {
+        // Clear selection when touching canvas
+        clearMobileSelection();
     }
 }
-// Automatic position saving every 10 seconds
-setInterval(() => {
-    if (Object.keys(flowchart).length > 0) {
+
+function handleMobileTouchMove(e) {
+    if (!mobileState.isTapping && !mobileState.isDragging) return;
+    
+    const touch = e.touches[0];
+    if (!touch) return;
+    
+    mobileState.currentPos = { x: touch.clientX, y: touch.clientY };
+    
+    const deltaX = touch.clientX - mobileState.startPos.x;
+    const deltaY = touch.clientY - mobileState.startPos.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Start dragging if threshold exceeded
+    if (!mobileState.isDragging && distance > mobileState.dragThreshold && mobileState.selectedNode) {
+        startMobileNodeDrag();
+        e.preventDefault();
+    }
+    
+    // Continue dragging
+    if (mobileState.isDragging) {
+        updateMobileNodeDrag(touch);
+        e.preventDefault();
+    }
+}
+
+function handleMobileTouchEnd(e) {
+    const duration = Date.now() - mobileState.startTime;
+    const deltaX = mobileState.currentPos.x - mobileState.startPos.x;
+    const deltaY = mobileState.currentPos.y - mobileState.startPos.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // Handle tap
+    if (mobileState.isTapping && duration < mobileState.tapThreshold && distance < mobileState.dragThreshold) {
+        if (mobileState.selectedNode) {
+            selectMobileNode(mobileState.selectedNode);
+        }
+    }
+    
+    // End drag
+    if (mobileState.isDragging) {
+        finishMobileNodeDrag();
+    }
+    
+    // Clean up
+    if (mobileState.selectedNode) {
+        mobileState.selectedNode.style.transform = '';
+        mobileState.selectedNode.style.transition = '';
+    }
+    
+    // Reset state
+    mobileState.isTapping = false;
+    mobileState.isDragging = false;
+    mobileState.selectedNode = null;
+}
+
+function startMobileNodeDrag() {
+    if (!mobileState.selectedNode) return;
+    
+    mobileState.isDragging = true;
+    
+    const node = mobileState.selectedNode;
+    node.style.zIndex = '1000';
+    node.style.opacity = '0.9';
+    node.style.transform = 'scale(1.05)';
+    node.style.transition = 'none';
+    node.classList.add('dragging');
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+    
+    console.log('Started mobile node drag');
+}
+
+function updateMobileNodeDrag(touch) {
+    if (!mobileState.isDragging || !mobileState.selectedNode) return;
+    
+    // Use the unified interaction system for actual dragging
+    if (typeof updateNodeDrag === 'function') {
+        updateNodeDrag(touch);
+    }
+}
+
+function finishMobileNodeDrag() {
+    if (!mobileState.selectedNode) return;
+    
+    const node = mobileState.selectedNode;
+    node.style.zIndex = '';
+    node.style.opacity = '';
+    node.style.transform = '';
+    node.style.transition = '';
+    node.classList.remove('dragging');
+    
+    // Save positions
+    if (typeof saveCurrentNodePositions === 'function') {
         saveCurrentNodePositions();
     }
-}, 10000);
-// Mobile-specific variables and functions
-let selectedMobileNode = null;
-let mobileEditingNodeId = null;
-let currentMobileImageData = null;
-
+    
+    console.log('Finished mobile node drag');
+}
 /// REPLACE THE MOBILE MENU FUNCTIONS (around line 1100) WITH THESE:
 
 function openMobileMenu() {
@@ -3500,87 +3723,106 @@ function handleNodeDoubleClick(e) {
     }
 }
 // Mobile form submission handler
+// =================================
+// UNIFIED FORM SUBMISSION HANDLING
+// =================================
+
 function setupMobileFormSubmission() {
     const mobileForm = document.getElementById('mobile-node-form');
-    if (mobileForm) {
-        mobileForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    if (!mobileForm) return;
+    
+    // Remove existing listeners
+    mobileForm.removeEventListener('submit', handleMobileFormSubmit);
+    
+    // Add new listener
+    mobileForm.addEventListener('submit', handleMobileFormSubmit);
+    
+    console.log('Mobile form submission handler setup');
+}
+
+function handleMobileFormSubmit(e) {
+    e.preventDefault();
+    
+    const nodeId = document.getElementById('mobile-node-id').value.trim();
+    const instruction = document.getElementById('mobile-node-instruction').value.trim();
+    
+    // Validate inputs
+    if (!nodeId || !instruction) {
+        alert('Please fill in both Node ID and Instruction fields.');
+        return;
+    }
+    
+    // Process options
+    const optionItems = document.querySelectorAll('#mobile-options-container .option-item');
+    let options = [];
+    let hasExitOption = false;
+    
+    const isEndNodeByID = nodeId.toLowerCase() === 'end' || 
+                         nodeId.toLowerCase() === 'exit' || 
+                         nodeId.toLowerCase() === 'finish' || 
+                         nodeId.toLowerCase() === 'complete';
+    
+    if (!isEndNodeByID) {
+        optionItems.forEach(item => {
+            const inputs = item.querySelectorAll('input');
+            const label = inputs[0].value.trim();
+            const nextNodeId = inputs[1].value.trim();
             
-            const nodeId = document.getElementById('mobile-node-id').value.trim();
-            const instruction = document.getElementById('mobile-node-instruction').value.trim();
-            
-            // Process options
-            const optionItems = document.querySelectorAll('#mobile-options-container .option-item');
-            let options = [];
-            let hasExitOption = false;
-            
-            const isEndNodeByID = nodeId.toLowerCase() === 'end' || 
-                                 nodeId.toLowerCase() === 'exit' || 
-                                 nodeId.toLowerCase() === 'finish' || 
-                                 nodeId.toLowerCase() === 'complete';
-            
-            if (!isEndNodeByID) {
-                optionItems.forEach(item => {
-                    const inputs = item.querySelectorAll('input');
-                    const label = inputs[0].value.trim();
-                    const nextNodeId = inputs[1].value.trim();
-                    
-                    if (label && nextNodeId) {
-                        if (label.toLowerCase() === 'exit' || nextNodeId.toLowerCase() === 'exit') {
-                            hasExitOption = true;
-                        } else {
-                            options.push({ label, nextNodeId });
-                        }
-                    }
-                });
-            }
-            
-            // Validation
-            if (!isEndNodeByID && !hasExitOption && options.length === 0) {
-                alert('Please add at least one option, or use "end", "exit", "finish", or "complete" as the node ID to create an end node.');
-                return;
-            }
-            
-            // Check for duplicate ID
-            if (mobileEditingNodeId && mobileEditingNodeId !== nodeId && flowchart[nodeId]) {
-                alert('A node with this ID already exists. Please choose a different ID.');
-                return;
-            }
-            
-            // Preserve position if editing
-            let position = null;
-            if (mobileEditingNodeId && flowchart[mobileEditingNodeId] && flowchart[mobileEditingNodeId].position) {
-                position = { 
-                    x: flowchart[mobileEditingNodeId].position.x, 
-                    y: flowchart[mobileEditingNodeId].position.y 
-                };
-                
-                if (mobileEditingNodeId !== nodeId) {
-                    delete flowchart[mobileEditingNodeId];
+            if (label && nextNodeId) {
+                if (label.toLowerCase() === 'exit' || nextNodeId.toLowerCase() === 'exit') {
+                    hasExitOption = true;
+                } else {
+                    options.push({ label, nextNodeId });
                 }
-            } else {
-                position = generateNodePosition();
             }
-            
-            // Create/update node
-            flowchart[nodeId] = {
-                id: nodeId,
-                instruction: instruction,
-                options: options,
-                image: currentMobileImageData,
-                position: position
-            };
-            
-            updateFlowchartDisplay();
-            resetMobileForm();
-            closeMobileMenu();
-            
-            const action = mobileEditingNodeId ? 'updated' : 'added';
-            const isEndNode = (isEndNodeByID || hasExitOption) && options.length === 0;
-            const nodeType = isEndNode ? 'End' : 'Node';
-            alert(`${nodeType} "${nodeId}" ${action} successfully!`);
         });
     }
+    
+    // Validation
+    if (!isEndNodeByID && !hasExitOption && options.length === 0) {
+        alert('Please add at least one option, or use "end", "exit", "finish", or "complete" as the node ID to create an end node.');
+        return;
+    }
+    
+    // Check for duplicate ID
+    if (mobileEditingNodeId && mobileEditingNodeId !== nodeId && flowchart[nodeId]) {
+        alert('A node with this ID already exists. Please choose a different ID.');
+        return;
+    }
+    
+    // Handle position
+    let position = null;
+    if (mobileEditingNodeId && flowchart[mobileEditingNodeId] && flowchart[mobileEditingNodeId].position) {
+        position = { 
+            x: flowchart[mobileEditingNodeId].position.x, 
+            y: flowchart[mobileEditingNodeId].position.y 
+        };
+        
+        if (mobileEditingNodeId !== nodeId) {
+            delete flowchart[mobileEditingNodeId];
+        }
+    } else {
+        position = generateNodePosition();
+    }
+    
+    // Create/update node
+    flowchart[nodeId] = {
+        id: nodeId,
+        instruction: instruction,
+        options: options,
+        image: currentMobileImageData,
+        position: position
+    };
+    
+    // Update display and close menu
+    updateFlowchartDisplay();
+    resetMobileForm();
+    closeMobileMenu();
+    
+    const action = mobileEditingNodeId ? 'updated' : 'added';
+    const isEndNode = (isEndNodeByID || hasExitOption) && options.length === 0;
+    const nodeType = isEndNode ? 'End' : 'Node';
+    alert(`${nodeType} "${nodeId}" ${action} successfully!`);
 }
 // =================================
 // MISSING MOBILE FUNCTIONS
@@ -3849,23 +4091,16 @@ function initializeMobileFeatures() {
     // Setup mobile form submission
     setupMobileFormSubmission();
     
-    // FIXED: Only setup mobile node interactions if on mobile
-    if (window.innerWidth <= 768) {
-        setupMobileNodeInteractions();
-    }
-    
-    // Prevent default touch behaviors on canvas
+    // Prevent default touch behaviors for multi-touch zoom prevention
     const canvas = document.getElementById('flowchart-canvas');
     if (canvas && window.innerWidth <= 768) {
         canvas.addEventListener('touchstart', function(e) {
-            // Allow normal scrolling but prevent zoom
             if (e.touches.length > 1) {
                 e.preventDefault();
             }
         }, { passive: false });
         
         canvas.addEventListener('touchmove', function(e) {
-            // Prevent zoom but allow single touch interactions
             if (e.touches.length > 1) {
                 e.preventDefault();
             }
@@ -3875,160 +4110,302 @@ function initializeMobileFeatures() {
     // Handle orientation changes
     window.addEventListener('orientationchange', function() {
         setTimeout(() => {
-            // Refresh the display after orientation change
             updateFlowchartDisplay();
-        }, 100);
+            if (window.innerWidth <= 768) {
+                initializeMobileTouchAndZoom();
+            }
+        }, 300);
     });
     
-    // Handle window resize for responsive behavior
+    // Handle window resize
     window.addEventListener('resize', function() {
-        // Update mobile UI elements based on new window size
         if (window.innerWidth > 768) {
-            // Desktop mode: Clean up mobile handlers
-            deselectMobileNode();
+            // Switched to desktop
+            removeMobileEventListeners();
+            clearMobileSelection();
             closeMobileMenu();
         } else if (window.innerWidth <= 768) {
-            // Mobile mode: Ensure mobile features are working
-            console.log('Switched to mobile mode');
+            // Switched to mobile
+            setTimeout(initializeMobileTouchAndZoom, 100);
         }
     });
     
     console.log('Mobile features initialized successfully');
 }
+// =================================
+// UNIFIED MOBILE TOUCH HANDLING
+// =================================
 
-
-// REPLACE the entire DOMContentLoaded section with this:
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize mobile features
-    initializeMobileFeatures();
+let mobileState = {
+    // Touch tracking
+    touches: new Map(),
+    startTime: 0,
+    startPos: { x: 0, y: 0 },
+    currentPos: { x: 0, y: 0 },
     
-    // Initialize unified interaction system
-    initializeNodeInteractions();
+    // Gesture detection
+    isTapping: false,
+    isDragging: false,
+    isPinching: false,
     
-    // Setup existing functionality
-    setupSearchEventListeners();
-    setupCanvasControls();
-    updateNavigateButtonState();
+    // Thresholds
+    tapThreshold: 300,
+    dragThreshold: 10,
     
-    // Add click handler for the navigate button with proper validation
-    const navigateBtn = document.querySelector('.navigate-from-create');
-    if (navigateBtn) {
-        navigateBtn.removeAttribute('onclick');
-        
-        navigateBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (!isNavigationAvailable()) {
-                alert('Please create some nodes first before navigating your flowchart.');
-                return false;
-            }
-            switchMode('navigate');
-        });
-    }
-});
-
-// Also setup immediately if DOM is already loaded
-if (document.readyState !== 'loading') {
-    initializeMobileFeatures();
-    initializeNodeInteractions();
-    setupSearchEventListeners();
-    setupCanvasControls();
-    updateNavigateButtonState();
+    // Selected elements
+    selectedNode: null,
     
-    const navigateBtn = document.querySelector('.navigate-from-create');
-    if (navigateBtn) {
-        navigateBtn.removeAttribute('onclick');
-        
-        navigateBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (!isNavigationAvailable()) {
-                alert('Please create some nodes first before navigating your flowchart.');
-                return false;
-            }
-            switchMode('navigate');
-        });
-    }
-}
+    // Canvas references
+    canvas: null,
+    content: null
+};
 
-// Prevent default gesture handling
-function preventDefaultGesture(e) {
-    e.preventDefault();
-    e.stopPropagation();
-}
-
-// Handle touch move
-function handleMobileTouchMove(e) {
+function initializeMobileTouchAndZoom() {
     if (window.innerWidth > 768) return;
+    
+    console.log('Initializing mobile touch and zoom...');
+    
+    // Clean up existing listeners
+    removeMobileEventListeners();
+    
+    // Set up canvas references
+    mobileState.canvas = document.getElementById('flowchart-canvas');
+    mobileState.content = document.getElementById('flowchart-content');
+    
+    if (!mobileState.canvas || !mobileState.content) {
+        console.warn('Canvas or content not found for mobile touch');
+        return;
+    }
+    
+    // Add unified touch listeners
+    mobileState.canvas.addEventListener('touchstart', handleMobileTouchStart, { passive: false });
+    mobileState.canvas.addEventListener('touchmove', handleMobileTouchMove, { passive: false });
+    mobileState.canvas.addEventListener('touchend', handleMobileTouchEnd, { passive: true });
+    mobileState.canvas.addEventListener('touchcancel', handleMobileTouchEnd, { passive: true });
+    
+    console.log('Mobile touch handlers initialized');
+}
+
+function removeMobileEventListeners() {
+    const canvas = document.getElementById('flowchart-canvas');
+    if (!canvas) return;
+    
+    canvas.removeEventListener('touchstart', handleMobileTouchStart);
+    canvas.removeEventListener('touchmove', handleMobileTouchMove);
+    canvas.removeEventListener('touchend', handleMobileTouchEnd);
+    canvas.removeEventListener('touchcancel', handleMobileTouchEnd);
+}
+
+function handleMobileTouchStart(e) {
+    const touch = e.touches[0];
+    const target = e.target.closest('.flowchart-node');
+    
+    // Store touch info
+    mobileState.startTime = Date.now();
+    mobileState.startPos = { x: touch.clientX, y: touch.clientY };
+    mobileState.currentPos = { x: touch.clientX, y: touch.clientY };
+    
+    if (target) {
+        // Touching a node
+        mobileState.selectedNode = target;
+        mobileState.isTapping = true;
+        
+        // Visual feedback
+        target.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+            if (!mobileState.isDragging) {
+                target.style.transform = '';
+            }
+        }, 150);
+        
+        // Prevent scrolling when touching nodes
+        e.preventDefault();
+    } else {
+        // Clear selection when touching canvas
+        clearMobileSelection();
+    }
+}
+
+function handleMobileTouchMove(e) {
+    if (!mobileState.isTapping && !mobileState.isDragging) return;
     
     const touch = e.touches[0];
-    const deltaX = touch.clientX - mobileState.startX;
-    const deltaY = touch.clientY - mobileState.startY;
+    if (!touch) return;
+    
+    mobileState.currentPos = { x: touch.clientX, y: touch.clientY };
+    
+    const deltaX = touch.clientX - mobileState.startPos.x;
+    const deltaY = touch.clientY - mobileState.startPos.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    // Determine what type of interaction this is
-    if (distance > mobileState.dragThreshold) {
-        if (mobileState.selectedNode && selectedMobileNode === mobileState.selectedNode) {
-            // Node dragging
-            if (!mobileState.isDraggingNode) {
-                mobileState.isDraggingNode = true;
-                startNodeDrag();
-            }
-            updateNodeDrag(touch);
-            e.preventDefault(); // Prevent scrolling during node drag
-        } else {
-            // Canvas scrolling - let the browser handle it naturally
-            if (!mobileState.isScrolling) {
-                mobileState.isScrolling = true;
-                // Remove any node visual feedback
-                if (mobileState.selectedNode) {
-                    mobileState.selectedNode.style.transform = '';
-                    mobileState.selectedNode.style.transition = '';
-                }
-            }
-            // DON'T preventDefault() here - let browser handle scrolling
-        }
+    // Start dragging if threshold exceeded
+    if (!mobileState.isDragging && distance > mobileState.dragThreshold && mobileState.selectedNode) {
+        startMobileNodeDrag();
+        e.preventDefault();
     }
     
-    mobileState.lastX = touch.clientX;
-    mobileState.lastY = touch.clientY;
+    // Continue dragging
+    if (mobileState.isDragging) {
+        updateMobileNodeDrag(touch);
+        e.preventDefault();
+    }
 }
 
-// Handle touch end
 function handleMobileTouchEnd(e) {
-    if (window.innerWidth > 768) return;
-    
-    const touchDuration = Date.now() - mobileState.touchStartTime;
-    const deltaX = mobileState.lastX - mobileState.startX;
-    const deltaY = mobileState.lastY - mobileState.startY;
+    const duration = Date.now() - mobileState.startTime;
+    const deltaX = mobileState.currentPos.x - mobileState.startPos.x;
+    const deltaY = mobileState.currentPos.y - mobileState.startPos.y;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
     // Handle tap
-    if (touchDuration < mobileState.tapThreshold && distance < mobileState.dragThreshold) {
+    if (mobileState.isTapping && duration < mobileState.tapThreshold && distance < mobileState.dragThreshold) {
         if (mobileState.selectedNode) {
             selectMobileNode(mobileState.selectedNode);
         }
     }
     
-    // Clean up drag state
-    if (mobileState.isDraggingNode) {
-        finishNodeDrag();
+    // End drag
+    if (mobileState.isDragging) {
+        finishMobileNodeDrag();
     }
     
-    // Remove visual feedback
+    // Clean up
     if (mobileState.selectedNode) {
         mobileState.selectedNode.style.transform = '';
         mobileState.selectedNode.style.transition = '';
     }
     
-    // Reset states
-    mobileState.isScrolling = false;
-    mobileState.isDraggingNode = false;
+    // Reset state
+    mobileState.isTapping = false;
+    mobileState.isDragging = false;
     mobileState.selectedNode = null;
 }
 
+function startMobileNodeDrag() {
+    if (!mobileState.selectedNode) return;
+    
+    mobileState.isDragging = true;
+    
+    const node = mobileState.selectedNode;
+    node.style.zIndex = '1000';
+    node.style.opacity = '0.9';
+    node.style.transform = 'scale(1.05)';
+    node.style.transition = 'none';
+    node.classList.add('dragging');
+    
+    // Haptic feedback
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+    
+    console.log('Started mobile node drag');
+}
+
+function updateMobileNodeDrag(touch) {
+    if (!mobileState.isDragging || !mobileState.selectedNode) return;
+    
+    // Use the unified interaction system for actual dragging
+    if (typeof updateNodeDrag === 'function') {
+        updateNodeDrag(touch);
+    }
+}
+
+function finishMobileNodeDrag() {
+    if (!mobileState.selectedNode) return;
+    
+    const node = mobileState.selectedNode;
+    node.style.zIndex = '';
+    node.style.opacity = '';
+    node.style.transform = '';
+    node.style.transition = '';
+    node.classList.remove('dragging');
+    
+    // Save positions
+    if (typeof saveCurrentNodePositions === 'function') {
+        saveCurrentNodePositions();
+    }
+    
+    console.log('Finished mobile node drag');
+}
+
+
+// =================================
+// CLEAN INITIALIZATION
+// =================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== INITIALIZING APPLICATION ===');
+    
+    // 1. Initialize mobile features if needed
+    if (window.innerWidth <= 768) {
+        initializeMobileFeatures();
+        setTimeout(initializeMobileTouchAndZoom, 100);
+    }
+    
+    // 2. Initialize unified interaction system
+    initializeNodeInteractions();
+    
+    // 3. Setup search functionality
+    setupSearchEventListeners();
+    
+    // 4. Setup canvas controls
+    setupCanvasControls();
+    
+    // 5. Update navigate button state
+    updateNavigateButtonState();
+    
+    // 6. Setup navigate button click handlers
+    setupNavigateButtonHandlers();
+    
+    // 7. Setup example dropdown events
+    setTimeout(setupExampleDropdownEvents, 200);
+    
+    console.log('=== APPLICATION INITIALIZED ===');
+});
+
+// Also handle immediate setup if DOM is already loaded
+if (document.readyState !== 'loading') {
+    console.log('DOM already loaded, running immediate setup...');
+    
+    if (window.innerWidth <= 768) {
+        initializeMobileFeatures();
+        setTimeout(initializeMobileTouchAndZoom, 50);
+    }
+    
+    initializeNodeInteractions();
+    setupSearchEventListeners();
+    setupCanvasControls();
+    updateNavigateButtonState();
+    setupNavigateButtonHandlers();
+    setTimeout(setupExampleDropdownEvents, 100);
+}
+
+function setupNavigateButtonHandlers() {
+    // Desktop navigate button
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    if (navigateBtn) {
+        navigateBtn.removeEventListener('click', handleNavigateClick);
+        navigateBtn.addEventListener('click', handleNavigateClick);
+    }
+    
+    // Mobile navigate button
+    const mobileNavigateBtn = document.querySelector('.navigate-from-create-mobile');
+    if (mobileNavigateBtn) {
+        mobileNavigateBtn.removeEventListener('click', handleNavigateClick);
+        mobileNavigateBtn.addEventListener('click', handleNavigateClick);
+    }
+}
+
+function handleNavigateClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isNavigationAvailable()) {
+        alert('Please create some nodes first before navigating your flowchart.');
+        return false;
+    }
+    switchMode('navigate');
+}
 // Handle touch move
 function handleMobileTouchMove(e) {
     if (window.innerWidth > 768) return;
@@ -4102,92 +4479,6 @@ function startNodeDrag() {
     }
     
     console.log('Started dragging node');
-}
-
-function updateNodeDrag(point) {
-    if (!interactionState.isDragging || !interactionState.selectedNode || !interactionState.selectedNodeData) return;
-    
-    const canvas = interactionState.canvas;
-    const rect = canvas.getBoundingClientRect();
-    const nodeData = interactionState.selectedNodeData;
-    
-    // Calculate new position
-    const canvasX = point.clientX - rect.left + canvas.scrollLeft;
-    const canvasY = point.clientY - rect.top + canvas.scrollTop;
-    const startCanvasX = interactionState.startPos.x - rect.left + canvas.scrollLeft;
-    const startCanvasY = interactionState.startPos.y - rect.top + canvas.scrollTop;
-    
-    const deltaX = canvasX - startCanvasX;
-    const deltaY = canvasY - startCanvasY;
-    
-    const newX = Math.max(0, interactionState.dragStartNodePos.x + deltaX);
-// REPLACE THE ENTIRE initializeMobileFeatures FUNCTION WITH THIS:
-function initializeMobileFeatures() {
-    console.log('Initializing mobile features...');
-    
-    // Setup mobile form submission
-    setupMobileFormSubmission();
-    
-    // Prevent default touch behaviors on canvas for multi-touch zoom prevention
-    const canvas = document.getElementById('flowchart-canvas');
-    if (canvas && window.innerWidth <= 768) {
-        canvas.addEventListener('touchstart', function(e) {
-            // Allow normal scrolling but prevent zoom
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        
-        canvas.addEventListener('touchmove', function(e) {
-            // Prevent zoom but allow single touch interactions
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-    }
-    
-    // Handle orientation changes
-    window.addEventListener('orientationchange', function() {
-        setTimeout(() => {
-            // Refresh the display after orientation change
-            updateFlowchartDisplay();
-        }, 100);
-    });
-    
-    // Handle window resize for responsive behavior
-    window.addEventListener('resize', function() {
-        // Update mobile UI elements based on new window size
-        if (window.innerWidth > 768) {
-            // Desktop mode: Clean up mobile handlers
-            deselectMobileNode();
-            closeMobileMenu();
-        } else if (window.innerWidth <= 768) {
-            // Mobile mode: Just ensure interactions are working
-            console.log('Switched to mobile mode');
-        }
-    });
-    
-    console.log('Mobile features initialized successfully');
-}    const newY = Math.max(0, interactionState.dragStartNodePos.y + deltaY);
-    
-    // Update node position in data FIRST
-    nodeData.position.x = newX;
-    nodeData.position.y = newY;
-    
-    // Update DOM position
-    interactionState.selectedNode.style.left = `${newX}px`;
-    interactionState.selectedNode.style.top = `${newY}px`;
-    
-    // FORCE immediate connection update with delay for DOM to settle
-    requestAnimationFrame(() => {
-        const svg = document.querySelector('#flowchart-content svg');
-        if (svg && typeof renderConnections === 'function') {
-            renderConnections(svg);
-        }
-    });
-    
-    // Expand canvas if needed
-    expandCanvasIfNeeded(newX, newY);
 }
 
 // ADD THESE FUNCTIONS AFTER initializeMobileFeatures:
@@ -4464,34 +4755,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('Mobile touch and zoom functionality loaded');
 
-// FIXED: Override the original updateFlowchartDisplay to include mobile connection fixes
-const originalUpdateFlowchartDisplayWithMobileFix = window.updateFlowchartDisplay;
-window.updateFlowchartDisplay = function() {
-    if (originalUpdateFlowchartDisplayWithMobileFix) {
-        originalUpdateFlowchartDisplayWithMobileFix();
-    }
-    
-    // Re-initialize mobile features after flowchart update
-    if (window.innerWidth <= 768) {
-        setTimeout(() => {
-            initializeMobileTouchAndZoom();
-            addMobileZoomButtons();
-            // FIXED: Ensure connections are properly rendered on mobile
-            updateNodeConnections();
-        }, 100);
-    }
-};
 
 // =================================
 // UNIFIED NODE INTERACTION SYSTEM
 // Add this to the END of main.js
-// =================================
-
-// =================================
-// COMPLETELY REPLACE THE UNIFIED NODE INTERACTION SYSTEM
-// Replace everything from "// Global interaction state" to the end of main.js
 // =================================
 
 // Global interaction state
@@ -5087,29 +5355,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // ADD these missing mobile functions to your main.js file:
 
 function toggleMobileExampleDropdown() {
-    console.log('Mobile toggleMobileExampleDropdown called');
+    console.log('Mobile dropdown toggle');
     
     const dropdown = document.getElementById('mobile-example-dropdown');
     const arrow = document.getElementById('mobile-dropdown-arrow');
     
-    if (!dropdown) {
-        console.error('Mobile dropdown element not found');
+    if (!dropdown || !arrow) {
+        console.error('Mobile dropdown elements not found');
         return;
     }
     
-    if (!arrow) {
-        console.error('Mobile arrow element not found');
-        return;
+    const isOpen = dropdown.classList.contains('show');
+    
+    if (isOpen) {
+        dropdown.classList.remove('show');
+        arrow.textContent = '▼';
+    } else {
+        dropdown.classList.add('show');
+        arrow.textContent = '▲';
     }
-    
-    console.log('Toggling mobile dropdown...');
-    dropdown.classList.toggle('show');
-    arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
-    
-    console.log('Mobile dropdown state:', dropdown.classList.contains('show'));
 }
 
-// Close dropdown when clicking outside - ENHANCED VERSION
+
+// Close dropdown when clicking outside
 document.addEventListener('click', function(event) {
     // Handle desktop dropdown
     const dropdown = document.getElementById('example-dropdown');
@@ -5134,44 +5402,50 @@ document.addEventListener('click', function(event) {
 
 // Enhanced loadExample function that works for both desktop and mobile
 function loadExample(exampleKey) {
-    if (exampleFlowcharts[exampleKey]) {
-        if (Object.keys(flowchart).length > 0) {
-            if (!confirm('This will replace your current flowchart. Continue?')) {
-                return;
-            }
-        }
-        
-        // Use deep copy to preserve the example data structure
-        flowchart = JSON.parse(JSON.stringify(exampleFlowcharts[exampleKey]));
-        updateFlowchartDisplay();
-        resetForm();
-        
-        // Close both desktop and mobile dropdowns
-        const dropdown = document.getElementById('example-dropdown');
-        const mobileDropdown = document.getElementById('mobile-example-dropdown');
-        
-        if (dropdown) {
-            dropdown.classList.remove('show');
-            const arrow = document.getElementById('dropdown-arrow');
-            if (arrow) arrow.textContent = '▼';
-        }
-        
-        if (mobileDropdown) {
-            mobileDropdown.classList.remove('show');
-            const mobileArrow = document.getElementById('mobile-dropdown-arrow');
-            if (mobileArrow) mobileArrow.textContent = '▼';
-        }
-        
-        // Close mobile menu if open
-        if (window.innerWidth <= 768) {
-            closeMobileMenu();
-        }
-        
-        alert(`Example "${exampleKey}" loaded successfully!`);
-    } else {
+    console.log('loadExample called with:', exampleKey);
+    
+    if (!exampleFlowcharts[exampleKey]) {
         console.error('Example not found:', exampleKey);
         alert('Example not found. Please try again.');
+        return;
     }
+    
+    // Only show confirmation if there's actually existing data
+    if (Object.keys(flowchart).length > 0) {
+        if (!confirm('This will replace your current flowchart. Continue?')) {
+            return;
+        }
+    }
+    
+    // Use deep copy to preserve the example data structure
+    flowchart = JSON.parse(JSON.stringify(exampleFlowcharts[exampleKey]));
+    updateFlowchartDisplay();
+    resetForm();
+    
+    // Close both desktop and mobile dropdowns
+    const dropdown = document.getElementById('example-dropdown');
+    const mobileDropdown = document.getElementById('mobile-example-dropdown');
+    
+    if (dropdown) {
+        dropdown.classList.remove('show');
+        const arrow = document.getElementById('dropdown-arrow');
+        if (arrow) arrow.textContent = '▼';
+    }
+    
+    if (mobileDropdown) {
+        mobileDropdown.classList.remove('show');
+        const mobileArrow = document.getElementById('mobile-dropdown-arrow');
+        if (mobileArrow) mobileArrow.textContent = '▼';
+    }
+    
+    // Close mobile menu if open
+    if (window.innerWidth <= 768) {
+        closeMobileMenu();
+    }
+    
+    // Single success message
+    console.log(`Example "${exampleKey}" loaded successfully`);
+    alert(`Example flowchart loaded successfully!`);
 }
 // Ensure example events are setup after any dynamic content changes
 function reinitializeExampleEvents() {
@@ -5289,4 +5563,28 @@ function debugNavigateButton() {
     console.log('=== END NAVIGATE BUTTON DEBUG ===');
 }
 
-// You can call this function in the browser console: debugNavigateButton()
+function debugDropdown() {
+    console.log('=== DROPDOWN DEBUG ===');
+    
+    const desktopBtn = document.querySelector('.example-dropdown-btn');
+    const desktopDropdown = document.getElementById('example-dropdown');
+    const mobileBtn = document.querySelector('.mobile-side-menu .example-dropdown-btn');
+    const mobileDropdown = document.getElementById('mobile-example-dropdown');
+    
+    console.log('Desktop button:', desktopBtn);
+    console.log('Desktop dropdown:', desktopDropdown);
+    console.log('Mobile button:', mobileBtn);
+    console.log('Mobile dropdown:', mobileDropdown);
+    
+    if (desktopDropdown) {
+        console.log('Desktop dropdown classes:', desktopDropdown.className);
+        console.log('Desktop dropdown display:', window.getComputedStyle(desktopDropdown).display);
+    }
+    
+    if (mobileDropdown) {
+        console.log('Mobile dropdown classes:', mobileDropdown.className);
+        console.log('Mobile dropdown display:', window.getComputedStyle(mobileDropdown).display);
+    }
+    
+    console.log('=== END DROPDOWN DEBUG ===');
+}
