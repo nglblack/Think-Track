@@ -2945,7 +2945,7 @@ textarea {
    Replace the existing mobile section in style.css with this
    ================================= */
 
-//* =================================
+/* =================================
    MOBILE LAYOUT - FIXED ORDER AND HEIGHT
    ================================= */
 
@@ -3950,5 +3950,96 @@ textarea {
     .option-item .remove-option:hover {
         background: #c0392b;
         transform: scale(1.1);
+    }
+}
+/* =================================
+   NAVIGATE BUTTON VISIBILITY FIX
+   Add this to the END of style.css
+   ================================= */
+
+/* FORCE DESKTOP NAVIGATE BUTTON TO BE VISIBLE */
+@media (min-width: 769px) {
+    .sidebar .navigate-from-create {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        
+        background: #27ae60 !important;
+        color: white !important;
+        font-size: 1rem !important;
+        padding: 16px 24px !important;
+        border-radius: 12px !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3) !important;
+        margin-top: 15px !important;
+        width: 100% !important;
+        font-weight: 600 !important;
+        
+        /* Override any hiding styles */
+        transform: none !important;
+        z-index: 1 !important;
+    }
+    
+    .sidebar .navigate-from-create:hover {
+        background: #229954 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4) !important;
+    }
+    
+    .sidebar .navigate-from-create:disabled {
+        background: #95a5a6 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        opacity: 0.7 !important;
+    }
+    
+    /* Hide mobile button on desktop */
+    .mobile-navigate-button {
+        display: none !important;
+    }
+}
+
+/* MOBILE SETTINGS */
+@media (max-width: 768px) {
+    /* Hide desktop button on mobile */
+    .sidebar .navigate-from-create {
+        display: none !important;
+    }
+    
+    /* Show mobile button */
+    .mobile-navigate-button {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .navigate-from-create-mobile {
+        background: #27ae60 !important;
+        color: white !important;
+        font-size: 0.85rem !important;
+        padding: 10px 16px !important;
+        border-radius: 6px !important;
+        border: none !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3) !important;
+        width: 100% !important;
+        font-weight: 600 !important;
+    }
+    
+    .navigate-from-create-mobile:hover {
+        background: #229954 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 5px 14px rgba(39, 174, 96, 0.4) !important;
+    }
+    
+    .navigate-from-create-mobile:disabled {
+        background: #95a5a6 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        opacity: 0.7 !important;
     }
 }

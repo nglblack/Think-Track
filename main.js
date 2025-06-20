@@ -110,52 +110,172 @@ function isNavigationAvailable() {
 }
 
 // UPDATE the updateNavigateButtonState function to handle both buttons
+// REPLACE THE updateNavigateButtonState FUNCTION WITH THIS:
+// REPLACE the updateNavigateButtonState function in main.js with this:
+
 function updateNavigateButtonState() {
     const navigateBtn = document.querySelector('.navigate-from-create');
     const mobileNavigateBtn = document.querySelector('.navigate-from-create-mobile');
     
     const isAvailable = isNavigationAvailable();
-    const buttonStyle = isAvailable ? {
-        disabled: false,
-        opacity: '1',
-        cursor: 'pointer',
-        title: 'Navigate through your flowchart'
-    } : {
-        disabled: true,
-        opacity: '0.6',
-        cursor: 'not-allowed',
-        title: 'Create some nodes first to enable navigation'
-    };
+    
+    console.log('Updating navigate button state. Is available:', isAvailable);
+    console.log('Found desktop button:', !!navigateBtn);
+    console.log('Found mobile button:', !!mobileNavigateBtn);
     
     // Update desktop button
     if (navigateBtn) {
-        Object.assign(navigateBtn, buttonStyle);
-        Object.assign(navigateBtn.style, {
-            opacity: buttonStyle.opacity,
-            cursor: buttonStyle.cursor
-        });
-        navigateBtn.title = buttonStyle.title;
+        // FORCE visibility and styling
+        navigateBtn.style.display = 'block';
+        navigateBtn.style.visibility = 'visible';
+        navigateBtn.style.opacity = '1';
+        navigateBtn.style.position = 'relative';
+        
+        if (isAvailable) {
+            navigateBtn.disabled = false;
+            navigateBtn.style.cursor = 'pointer';
+            navigateBtn.title = 'Navigate through your flowchart';
+            navigateBtn.style.background = '#27ae60';
+        } else {
+            navigateBtn.disabled = true;
+            navigateBtn.style.cursor = 'not-allowed';
+            navigateBtn.title = 'Create some nodes first to enable navigation';
+            navigateBtn.style.background = '#95a5a6';
+        }
+        
+        console.log('Desktop button styled. Disabled:', navigateBtn.disabled);
+    } else {
+        console.error('Desktop navigate button not found in DOM');
     }
     
     // Update mobile button
     if (mobileNavigateBtn) {
-        Object.assign(mobileNavigateBtn, buttonStyle);
-        Object.assign(mobileNavigateBtn.style, {
-            opacity: buttonStyle.opacity,
-            cursor: buttonStyle.cursor
-        });
-        mobileNavigateBtn.title = buttonStyle.title;
+        if (isAvailable) {
+            mobileNavigateBtn.disabled = false;
+            mobileNavigateBtn.style.opacity = '1';
+            mobileNavigateBtn.style.cursor = 'pointer';
+            mobileNavigateBtn.title = 'Navigate through your flowchart';
+            mobileNavigateBtn.style.background = '#27ae60';
+        } else {
+            mobileNavigateBtn.disabled = true;
+            mobileNavigateBtn.style.opacity = '0.7';
+            mobileNavigateBtn.style.cursor = 'not-allowed';
+            mobileNavigateBtn.title = 'Create some nodes first to enable navigation';
+            mobileNavigateBtn.style.background = '#95a5a6';
+        }
+        
+        console.log('Mobile button styled. Disabled:', mobileNavigateBtn.disabled);
+    }
+    
+    console.log('Navigate button state updated');
+}
+
+// ALSO ADD this enhanced initialization function:
+
+function ensureNavigateButtonVisibility() {
+    console.log('=== ENSURING NAVIGATE BUTTON VISIBILITY ===');
+    
+    // Force create the button if it doesn't exist
+    const existingBtn = document.querySelector('.navigate-from-create');
+    
+    if (!existingBtn) {
+        console.log('Navigate button not found, attempting to create...');
+        
+        const sidebarHeader = document.querySelector('.sidebar-header');
+        if (sidebarHeader) {
+            const navigateBtn = document.createElement('button');
+            navigateBtn.className = 'btn btn-primary btn-large navigate-from-create';
+            navigateBtn.innerHTML = '🔁 Navigate Flowchart';
+            navigateBtn.style.cssText = `
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                background: #27ae60 !important;
+                color: white !important;
+                font-size: 1rem !important;
+                padding: 16px 24px !important;
+                border-radius: 12px !important;
+                border: none !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3) !important;
+                margin-top: 15px !important;
+                width: 100% !important;
+                font-weight: 600 !important;
+            `;
+            
+            // Add click event
+            navigateBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!isNavigationAvailable()) {
+                    alert('Please create some nodes first before navigating your flowchart.');
+                    return false;
+                }
+                switchMode('navigate');
+            });
+            
+            sidebarHeader.appendChild(navigateBtn);
+            console.log('Navigate button created and added to sidebar');
+        } else {
+            console.error('Sidebar header not found');
+        }
+    } else {
+        console.log('Navigate button found, ensuring visibility...');
+        
+        // Force visibility
+        existingBtn.style.display = 'block';
+        existingBtn.style.visibility = 'visible';
+        existingBtn.style.opacity = '1';
+        existingBtn.style.position = 'relative';
+        
+        console.log('Navigate button visibility forced');
+    }
+    
+    // Update button state
+    updateNavigateButtonState();
+    
+    console.log('=== NAVIGATE BUTTON VISIBILITY CHECK COMPLETE ===');
+}
+function toggleExampleDropdown() {
+    console.log('Desktop toggleExampleDropdown called');
+    
+    const dropdown = document.getElementById('example-dropdown');
+    const arrow = document.getElementById('dropdown-arrow');
+    
+    if (!dropdown) {
+        console.error('Desktop dropdown element not found');
+        return;
+    }
+    
+    if (!arrow) {
+        console.error('Desktop arrow element not found');
+        return;
+    }
+    
+    console.log('Current dropdown classes:', dropdown.className);
+    console.log('Current dropdown display:', window.getComputedStyle(dropdown).display);
+    console.log('Current dropdown visibility:', window.getComputedStyle(dropdown).visibility);
+    console.log('Current dropdown position:', window.getComputedStyle(dropdown).position);
+    
+    // Toggle the dropdown
+    dropdown.classList.toggle('show');
+    arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
+    
+    console.log('After toggle - dropdown classes:', dropdown.className);
+    console.log('Dropdown is now:', dropdown.classList.contains('show') ? 'VISIBLE' : 'HIDDEN');
+    
+    // Force visibility if it has the show class
+    if (dropdown.classList.contains('show')) {
+        dropdown.style.display = 'block';
+        dropdown.style.visibility = 'visible';
+        dropdown.style.opacity = '1';
+        dropdown.style.zIndex = '2000';
+        dropdown.style.position = 'absolute';
+        console.log('FORCED dropdown visibility');
     }
 }
-
-function toggleExampleDropdown() {
-   const dropdown = document.getElementById('example-dropdown');
-   const arrow = document.getElementById('dropdown-arrow');
-   
-   dropdown.classList.toggle('show');
-   arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
-}
-
 // Close dropdown when clicking outside
 document.addEventListener('click', function(event) {
    const dropdown = document.getElementById('example-dropdown');
@@ -190,7 +310,135 @@ function loadExample(exampleKey) {
         alert(`Example "${exampleKey}" loaded successfully!`);
     }
 }
+// Add proper event listeners for example options
+function setupExampleDropdownEvents() {
+    console.log('Setting up example dropdown events');
+    
+    // Remove the existing event setup that conflicts with onclick
+    // Instead, ensure the dropdown button works correctly
+    
+    const desktopButton = document.querySelector('.example-dropdown-btn');
+    const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
+    
+    if (desktopButton) {
+        // Remove any existing event listeners
+        desktopButton.removeEventListener('click', toggleExampleDropdown);
+        // Add fresh event listener
+        desktopButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Desktop button clicked via event listener');
+            toggleExampleDropdown();
+        });
+        console.log('Desktop button event listener added');
+    }
+    
+    if (mobileButton) {
+        mobileButton.removeEventListener('click', toggleMobileExampleDropdown);
+        mobileButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Mobile button clicked via event listener');
+            toggleMobileExampleDropdown();
+        });
+        console.log('Mobile button event listener added');
+    }
+    
+    // Direct option click handlers (since onclick attributes might not work)
+    document.querySelectorAll('#example-dropdown .example-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Desktop example option clicked directly');
+            
+            // Get the example key from the text content or data attribute
+            const text = this.textContent.trim();
+            let exampleKey = null;
+            
+            if (text.includes('Should I Eat It?')) {
+                exampleKey = 'should-i-eat-it';
+            }
+            
+            if (exampleKey) {
+                console.log('Loading example:', exampleKey);
+                loadExample(exampleKey);
+            } else {
+                console.error('Could not determine example key from:', text);
+            }
+        });
+    });
+    
+    document.querySelectorAll('#mobile-example-dropdown .example-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Mobile example option clicked directly');
+            
+            const text = this.textContent.trim();
+            let exampleKey = null;
+            
+            if (text.includes('Should I Eat It?')) {
+                exampleKey = 'should-i-eat-it';
+            }
+            
+            if (exampleKey) {
+                console.log('Loading example:', exampleKey);
+                loadExample(exampleKey);
+            }
+        });
+    });
+    
+    console.log('Example dropdown events setup complete');
+}
 
+// ADD this debugging function to check dropdown state:
+function debugDropdown() {
+    console.log('=== DROPDOWN DEBUG ===');
+    
+    const button = document.querySelector('.example-dropdown-btn');
+    const dropdown = document.getElementById('example-dropdown');
+    const arrow = document.getElementById('dropdown-arrow');
+    
+    console.log('Button element:', button);
+    console.log('Dropdown element:', dropdown);
+    console.log('Arrow element:', arrow);
+    
+    if (dropdown) {
+        const styles = window.getComputedStyle(dropdown);
+        console.log('Dropdown computed styles:');
+        console.log('- display:', styles.display);
+        console.log('- visibility:', styles.visibility);
+        console.log('- opacity:', styles.opacity);
+        console.log('- position:', styles.position);
+        console.log('- z-index:', styles.zIndex);
+        console.log('- top:', styles.top);
+        console.log('- bottom:', styles.bottom);
+        console.log('- left:', styles.left);
+        console.log('- right:', styles.right);
+        
+        console.log('Dropdown classes:', dropdown.className);
+        
+        const rect = dropdown.getBoundingClientRect();
+        console.log('Dropdown bounding rect:', rect);
+        
+        // Check if dropdown has any content
+        console.log('Dropdown innerHTML:', dropdown.innerHTML);
+        console.log('Dropdown children count:', dropdown.children.length);
+    }
+    
+    if (button) {
+        const buttonRect = button.getBoundingClientRect();
+        console.log('Button bounding rect:', buttonRect);
+        console.log('Button onclick:', button.onclick);
+        console.log('Button event listeners:', button);
+    }
+    
+    console.log('=== END DROPDOWN DEBUG ===');
+}
+
+// Call this in browser console to debug: debugDropdown()
 function addOption() {
    const container = document.getElementById('options-container');
    const optionDiv = document.createElement('div');
@@ -2882,76 +3130,78 @@ function resetCanvasZoom() {
 // Initialize
 updateFlowchartDisplay();
 
-// Setup everything when the page loads
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM Content Loaded - initializing...');
-    function setupMobileNodeInteractions() {
-    console.log('Setting up mobile node interactions...');
-    
-    // This function was referenced but missing
-    // The actual mobile interaction handling is now done by the unified system
-    // So this is just a placeholder to prevent the error
-    
-    if (window.innerWidth <= 768) {
-        console.log('Mobile node interactions ready');
-        
-        // Add any mobile-specific setup here if needed
-        const canvas = document.getElementById('flowchart-canvas');
-        if (canvas) {
-            // Ensure proper touch behavior
-            canvas.style.touchAction = 'auto';
-        }
-    }
-}
+// REPLACE THE ENTIRE DOMContentLoaded EVENT WITH THIS:
+// REPLACE the entire DOMContentLoaded section in main.js with this:
 
-    // Initialize mobile features if on mobile
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOM CONTENT LOADED - ENHANCED INITIALIZATION ===');
+    
+    // Initialize mobile features first
     if (window.innerWidth <= 768) {
         initializeMobileFeatures();
     }
     
-    // Initialize unified interaction system (handles both mobile and desktop)
+    // Initialize unified interaction system
     initializeNodeInteractions();
     
     // Setup existing functionality
     setupSearchEventListeners();
     setupCanvasControls();
-    updateNavigateButtonState();
     
-        // Setup both desktop and mobile navigate buttons
-    const navigateBtn = document.querySelector('.navigate-from-create');
-    const mobileNavigateBtn = document.querySelector('.navigate-from-create-mobile');
-    
-    // Desktop navigate button
-    if (navigateBtn) {
-        navigateBtn.removeAttribute('onclick');
-        navigateBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (!isNavigationAvailable()) {
-                alert('Please create some nodes first before navigating your flowchart.');
-                return false;
+    // CRITICAL: Ensure navigate button is visible and functional
+    setTimeout(() => {
+        ensureNavigateButtonVisibility();
+        
+        // Double-check after a brief delay
+        setTimeout(() => {
+            const navigateBtn = document.querySelector('.navigate-from-create');
+            if (navigateBtn) {
+                console.log('Navigate button final check - Display:', navigateBtn.style.display);
+                console.log('Navigate button final check - Visibility:', navigateBtn.style.visibility);
+                console.log('Navigate button final check - Opacity:', navigateBtn.style.opacity);
+                
+                // Force visibility one more time if needed
+                if (window.innerWidth > 768) {
+                    navigateBtn.style.display = 'block';
+                    navigateBtn.style.visibility = 'visible';
+                    navigateBtn.style.opacity = '1';
+                }
+            } else {
+                console.error('CRITICAL: Navigate button still not found after initialization');
             }
-            switchMode('navigate');
-        });
-    }
+        }, 500);
+    }, 100);
     
-    // Mobile navigate button
-    if (mobileNavigateBtn) {
-        mobileNavigateBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (!isNavigationAvailable()) {
-                alert('Please create some nodes first before navigating your flowchart.');
-                return false;
-            }
-            switchMode('navigate');
-        });
-    }
+    // Setup example dropdown events
+    setTimeout(() => {
+        setupExampleDropdownEvents();
+        console.log('Example dropdown events setup complete');
+    }, 200);
     
-    console.log('Initialization complete');
+    console.log('=== INITIALIZATION COMPLETE ===');
 });
+
+// Also setup immediately if DOM is already loaded
+if (document.readyState !== 'loading') {
+    console.log('DOM already loaded, running immediate setup...');
+    
+    if (window.innerWidth <= 768) {
+        initializeMobileFeatures();
+    }
+    
+    initializeNodeInteractions();
+    setupSearchEventListeners();
+    setupCanvasControls();
+    
+    // Ensure navigate button
+    setTimeout(() => {
+        ensureNavigateButtonVisibility();
+    }, 50);
+    
+    setTimeout(() => {
+        setupExampleDropdownEvents();
+    }, 100);
+}
 // ALSO ADD this function to handle mobile scroll-to-buttons
 function scrollToMobileButtons() {
     if (window.innerWidth <= 768) {
@@ -4837,33 +5087,44 @@ document.addEventListener('DOMContentLoaded', function() {
 // ADD these missing mobile functions to your main.js file:
 
 function toggleMobileExampleDropdown() {
+    console.log('Mobile toggleMobileExampleDropdown called');
+    
     const dropdown = document.getElementById('mobile-example-dropdown');
     const arrow = document.getElementById('mobile-dropdown-arrow');
     
-    if (!dropdown || !arrow) {
-        console.error('Mobile example dropdown elements not found');
+    if (!dropdown) {
+        console.error('Mobile dropdown element not found');
         return;
     }
     
+    if (!arrow) {
+        console.error('Mobile arrow element not found');
+        return;
+    }
+    
+    console.log('Toggling mobile dropdown...');
     dropdown.classList.toggle('show');
     arrow.textContent = dropdown.classList.contains('show') ? '▲' : '▼';
+    
+    console.log('Mobile dropdown state:', dropdown.classList.contains('show'));
 }
 
-// Close mobile dropdown when clicking outside
+// Close dropdown when clicking outside - ENHANCED VERSION
 document.addEventListener('click', function(event) {
-    const dropdown = document.getElementById('mobile-example-dropdown');
+    // Handle desktop dropdown
+    const dropdown = document.getElementById('example-dropdown');
     const button = document.querySelector('.example-dropdown-btn');
-    const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
     
-    // Handle both desktop and mobile dropdowns
     if (dropdown && button && !button.contains(event.target) && !dropdown.contains(event.target)) {
         dropdown.classList.remove('show');
-        const arrow = document.getElementById('mobile-dropdown-arrow');
+        const arrow = document.getElementById('dropdown-arrow');
         if (arrow) arrow.textContent = '▼';
     }
     
-    // Handle mobile dropdown specifically
+    // Handle mobile dropdown
     const mobileDropdown = document.getElementById('mobile-example-dropdown');
+    const mobileButton = document.querySelector('.mobile-side-menu .example-dropdown-btn');
+    
     if (mobileDropdown && mobileButton && !mobileButton.contains(event.target) && !mobileDropdown.contains(event.target)) {
         mobileDropdown.classList.remove('show');
         const mobileArrow = document.getElementById('mobile-dropdown-arrow');
@@ -4912,3 +5173,120 @@ function loadExample(exampleKey) {
         alert('Example not found. Please try again.');
     }
 }
+// Ensure example events are setup after any dynamic content changes
+function reinitializeExampleEvents() {
+    // Remove existing event listeners to prevent duplicates
+    document.querySelectorAll('.example-option').forEach(option => {
+        option.replaceWith(option.cloneNode(true));
+    });
+    
+    // Re-setup events
+    setupExampleDropdownEvents();
+}
+
+// Call this whenever you update the DOM that might affect dropdowns
+window.reinitializeExampleEvents = reinitializeExampleEvents;
+
+// DELETE NODE FUNCTION
+function deleteNode(nodeId) {
+    if (confirm(`Are you sure you want to delete node "${nodeId}"? This action cannot be undone.`)) {
+        console.log(`Deleting node: ${nodeId}`);
+        
+        // Remove the node from the flowchart
+        delete flowchart[nodeId];
+        
+        // Clear editing state if we were editing this node
+        if (editingNodeId === nodeId) {
+            resetForm();
+        }
+        
+        // Clear mobile editing state if applicable
+        if (mobileEditingNodeId === nodeId) {
+            resetMobileForm();
+        }
+        
+        // Update the display
+        updateFlowchartDisplay();
+        
+        console.log(`Node "${nodeId}" deleted successfully`);
+        alert(`Node "${nodeId}" deleted successfully!`);
+    }
+}
+
+// CANCEL EDIT FUNCTION
+function cancelEdit() {
+    console.log('Cancelling edit mode');
+    
+    // Reset the form and editing state
+    resetForm();
+    
+    // Scroll back to top of form
+    document.getElementById('node-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ENHANCED MOBILE CANCEL EDIT FUNCTION
+function cancelMobileEdit() {
+    console.log('Cancelling mobile edit');
+    
+    // Reset mobile form
+    resetMobileForm();
+    
+    // Close mobile menu
+    closeMobileMenu();
+}
+// ADD this debugging function to main.js to help identify issues:
+
+function debugNavigateButton() {
+    console.log('=== NAVIGATE BUTTON DEBUG ===');
+    
+    const navigateBtn = document.querySelector('.navigate-from-create');
+    const sidebarHeader = document.querySelector('.sidebar-header');
+    const sidebar = document.querySelector('.sidebar');
+    
+    console.log('Navigate button element:', navigateBtn);
+    console.log('Sidebar header element:', sidebarHeader);
+    console.log('Sidebar element:', sidebar);
+    
+    if (navigateBtn) {
+        const styles = window.getComputedStyle(navigateBtn);
+        console.log('Button computed styles:');
+        console.log('- display:', styles.display);
+        console.log('- visibility:', styles.visibility);
+        console.log('- opacity:', styles.opacity);
+        console.log('- position:', styles.position);
+        console.log('- z-index:', styles.zIndex);
+        console.log('- background:', styles.background);
+        console.log('- color:', styles.color);
+        
+        console.log('Button inline styles:');
+        console.log('- display:', navigateBtn.style.display);
+        console.log('- visibility:', navigateBtn.style.visibility);
+        console.log('- opacity:', navigateBtn.style.opacity);
+        
+        const rect = navigateBtn.getBoundingClientRect();
+        console.log('Button bounding rect:', rect);
+        
+        console.log('Button classes:', navigateBtn.className);
+        console.log('Button disabled:', navigateBtn.disabled);
+    } else {
+        console.error('Navigate button not found!');
+        
+        // Check if sidebar exists
+        if (sidebarHeader) {
+            console.log('Sidebar header exists, checking children:');
+            Array.from(sidebarHeader.children).forEach((child, index) => {
+                console.log(`Child ${index}:`, child.tagName, child.className, child.textContent);
+            });
+        } else {
+            console.error('Sidebar header not found!');
+        }
+    }
+    
+    // Check screen size
+    console.log('Window width:', window.innerWidth);
+    console.log('Is mobile:', window.innerWidth <= 768);
+    
+    console.log('=== END NAVIGATE BUTTON DEBUG ===');
+}
+
+// You can call this function in the browser console: debugNavigateButton()
